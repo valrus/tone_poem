@@ -1,0 +1,33 @@
+#:kivy 1.1.0
+
+<StackLayout>:
+    canvas:
+        Color:
+            rgb: (0.2, 0.2, 0.2)
+
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<WhiteKey>:
+    canvas:
+        Color:
+            rgb: (1, 1, 1) if self.pressed else (0.8, 0.8, 0.8)
+
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<Keyboard>:
+    keybox: box
+
+    canvas:
+        Color:
+            hsv: 1, 0.1, 0.1
+
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    RelativeLayout:
+        id: box

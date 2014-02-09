@@ -1,0 +1,17 @@
+*.pyc
+__pycache__
+*.egg-info
+py
+build
+dist
+eggs
+parts
+develop-eggs
+bin
+downloads
+.installed.cfg
+*.spec
+.idea
+target
+*.so
+*.sublime_workspace

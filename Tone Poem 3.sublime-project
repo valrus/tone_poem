@@ -1,0 +1,13 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"python_interpreter": "/Users/valrus/.envs/kivy/bin/python"
+	}
+}
