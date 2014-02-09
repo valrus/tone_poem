@@ -1,8 +1,3 @@
-import os
-import sys
-# Why is the working dir not in sys.path? I have no idea.
-sys.path.append(os.path.abspath(os.curdir))
-
 from kivy.app import App
 from kivy.adapters.dictadapter import DictAdapter
 from kivy.uix.listview import ListItemButton, ListView
