@@ -1,11 +1,13 @@
+from itertools import chain
+
 from kivy.event import EventDispatcher
 from kivy.properties import BooleanProperty, ListProperty, ObjectProperty
-from kivy.uix.button import Button
-from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.widget import Widget
 
 import midimsg
 import rtmidi
+from mingushelpers import BLACK_KEYS, WHITE_KEYS
 
 
 class MidiInputDispatcher(EventDispatcher):
@@ -34,13 +36,24 @@ class MidiInputDispatcher(EventDispatcher):
         pass
 
 
-class WhiteKey(Button):
+class WhiteKey(Widget):
+    width_hint = 1.0 / 7.0
     pressed = BooleanProperty(False)
 
 
-class Keyboard(Widget):
+class BlackKey(Widget):
+    width_hint = 1.0 / 10.0
+    pressed = BooleanProperty(False)
+
+
+class Keyboard(AnchorLayout):
     keybox = ObjectProperty(None)
     midi_in = ObjectProperty(MidiInputDispatcher())
+
+    @staticmethod
+    def _white_keys_left_of(x):
+        """Get the number of white keys to the left of a given black one."""
+        return (x + 2) // 2
 
     def __init__(self, **kw):
         self.midi_in.watchers.add(self)
@@ -51,12 +64,23 @@ class Keyboard(Widget):
         self.midi_in.open_port(list_adapter.selection[0].index)
 
     def on_keybox(self, instance, value):
-        for i in range(7):
+        for index, k in enumerate(WHITE_KEYS):
             self.keybox.add_widget(
                 WhiteKey(
-                    text=str(i),
-                    width=20,
-                    pos=[22 * i, 20]
+                    pos_hint={'x': index * WhiteKey.width_hint},
+                    size_hint=(WhiteKey.width_hint, 1)
+                )
+            )
+        for k in BLACK_KEYS:
+            self.keybox.add_widget(
+                BlackKey(
+                    pos_hint={
+                        'x': WhiteKey.width_hint
+                        * Keyboard._white_keys_left_of(k)
+                        - BlackKey.width_hint / 2,
+                        'top': 1
+                    },
+                    size_hint=(BlackKey.width_hint, 0.6)
                 )
             )
 
