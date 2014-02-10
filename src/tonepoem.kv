@@ -3,14 +3,14 @@
 <WhiteKey>:
     canvas:
         Color:
-            rgb: (0.8, 1, 0.8) if self.pressed else (0.8, 0.8, 0.8)
+            rgb: (0.7, 1, 0.7) if self.pressed else (0.8, 0.8, 0.8)
 
         Rectangle:
             pos: self.pos
             size: self.size
 
         Color:
-            rgb: (0.8, 1, 0.8) if self.pressed else (1, 1, 1)
+            rgb: (0.7, 1, 0.7) if self.pressed else (1, 1, 1)
 
         Rectangle:
             pos: self.x + 1, self.y + 1
@@ -20,7 +20,7 @@
 <BlackKey>:
     canvas:
         Color:
-            rgb: (0.8, 1, 0.8) if self.pressed else (0, 0, 0)
+            rgb: (0.3, 0.5, 0.3) if self.pressed else (0, 0, 0)
 
         Rectangle:
             pos: self.pos
@@ -28,7 +28,7 @@
 
     canvas:
         Color:
-            rgb: (0.8, 1, 0.8) if self.pressed else (0.2, 0.2, 0.2)
+            rgb: (0.3, 0.5, 0.3) if self.pressed else (0.2, 0.2, 0.2)
 
         Rectangle:
             pos: self.x + 1, self.y + 1
