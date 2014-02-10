@@ -1,5 +1,3 @@
-from itertools import chain
-
 from kivy.event import EventDispatcher
 from kivy.properties import BooleanProperty, ListProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
@@ -58,6 +56,7 @@ class Keyboard(AnchorLayout):
     def __init__(self, **kw):
         self.midi_in.watchers.add(self)
         self.register_event_type('on_midi')
+        self.keys = [None] * 12
         super(Keyboard, self).__init__(**kw)
 
     def midi_port_changed(self, list_adapter, *args):
@@ -65,26 +64,29 @@ class Keyboard(AnchorLayout):
 
     def on_keybox(self, instance, value):
         for index, k in enumerate(WHITE_KEYS):
-            self.keybox.add_widget(
-                WhiteKey(
-                    pos_hint={'x': index * WhiteKey.width_hint},
-                    size_hint=(WhiteKey.width_hint, 1)
-                )
+            key = WhiteKey(
+                pos_hint={'x': index * WhiteKey.width_hint},
+                size_hint=(WhiteKey.width_hint, 1)
             )
+            self.keybox.add_widget(key)
+            self.keys[k] = key
         for k in BLACK_KEYS:
-            self.keybox.add_widget(
-                BlackKey(
-                    pos_hint={
-                        'x': WhiteKey.width_hint
-                        * Keyboard._white_keys_left_of(k)
-                        - BlackKey.width_hint / 2,
-                        'top': 1
-                    },
-                    size_hint=(BlackKey.width_hint, 0.6)
-                )
+            key = BlackKey(
+                pos_hint={
+                    'x': WhiteKey.width_hint
+                    * Keyboard._white_keys_left_of(k)
+                    - BlackKey.width_hint / 2,
+                    'top': 1
+                },
+                size_hint=(BlackKey.width_hint, 0.6)
             )
+            self.keybox.add_widget(key)
+            self.keys[k] = key
 
     def on_midi(self, *args):
         midi_data, extra_data = args
         msg = midimsg.MidiMessage(midi_data)
-        print("Got MIDI data: ", msg)
+        if msg.status == midimsg.MidiStatus.noteOn:
+            self.keys[msg.data1 % 12].pressed = True
+        elif msg.status == midimsg.MidiStatus.noteOff:
+            self.keys[msg.data1 % 12].pressed = False
