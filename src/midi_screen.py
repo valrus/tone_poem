@@ -4,11 +4,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.listview import ListItemButton, ListView
 from kivy.uix.screenmanager import Screen
 
-from keyboard import Keyboard
-
-from kivy.lang import Builder
-Builder.load_string("""
-""")
+from keyboard import MidiKeyboard
 
 
 def midi_dict_args_converter(row_index, device_name):
@@ -27,9 +23,8 @@ class MidiScreen(Screen):
                          size_hint=(1.0, 1.0),
                          padding=10,
                          spacing=10)
-        kb = Keyboard(anchor_x='center', anchor_y='center',
-                      size_hint=(None, None),
-                      size=(200, 100))
+        kb = MidiKeyboard(anchor_x='center', anchor_y='center',
+                          size_hint=(0.5, 0.5))
 
         self.add_widget(root)
         # set up the midi device list

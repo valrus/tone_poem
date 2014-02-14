@@ -1,5 +1,6 @@
 from kivy.event import EventDispatcher
-from kivy.properties import BooleanProperty, ListProperty, ObjectProperty
+from kivy.properties import BooleanProperty, ObjectProperty
+from kivy.properties import ReferenceListProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.widget import Widget
 
@@ -44,7 +45,7 @@ class BlackKey(Widget):
     pressed = BooleanProperty(False)
 
 
-class Keyboard(AnchorLayout):
+class MidiKeyboard(AnchorLayout):
     keybox = ObjectProperty(None)
     midi_in = ObjectProperty(MidiInputDispatcher())
 
@@ -57,7 +58,7 @@ class Keyboard(AnchorLayout):
         self.midi_in.watchers.add(self)
         self.register_event_type('on_midi')
         self.keys = [None] * 12
-        super(Keyboard, self).__init__(**kw)
+        super(MidiKeyboard, self).__init__(**kw)
 
     def midi_port_changed(self, list_adapter, *args):
         self.midi_in.open_port(list_adapter.selection[0].index)
@@ -74,7 +75,7 @@ class Keyboard(AnchorLayout):
             key = BlackKey(
                 pos_hint={
                     'x': WhiteKey.width_hint
-                    * Keyboard._white_keys_left_of(k)
+                    * MidiKeyboard._white_keys_left_of(k)
                     - BlackKey.width_hint / 2,
                     'top': 1
                 },
