@@ -4,6 +4,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen
 
 from keyboard import MidiKeyboard
+from musicplayer import MusicPlayer
 
 
 class BattleScreen(Screen):
@@ -23,3 +24,11 @@ class BattleScreen(Screen):
         infoArea = BoxLayout(size_hint=(1.0, 0.3))
         root.add_widget(infoArea)
         self.add_widget(root)
+
+        self.music = MusicPlayer()
+
+    def on_enter(self):
+        self.music.play()
+
+    def on_pre_leave(self):
+        self.music.stop()
