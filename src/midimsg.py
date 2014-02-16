@@ -24,7 +24,6 @@ def bits_equal(n1, n2, mask=0b11111111):
 
 class MidiMessage(object):
     def __init__(self, msgData):
-        print(msgData)
         (status, self.data1, self.data2), self.elapsed = msgData
         statusFirstNybble = status >> 4
         if MidiStatus._isNoteOff(statusFirstNybble, self.data2):
