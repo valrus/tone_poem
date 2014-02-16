@@ -14,7 +14,7 @@ downloads
 .idea
 target
 *.so
-*.sublime_workspace
+*.sublime-workspace
 rtmidi.html
 src/sounds
 src/sprites
