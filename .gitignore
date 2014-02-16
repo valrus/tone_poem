@@ -16,3 +16,5 @@ target
 *.so
 *.sublime_workspace
 rtmidi.html
+src/sounds
+src/sprites
