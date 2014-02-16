@@ -1,5 +1,61 @@
 #:kivy 1.1.0
 
+<BattleScreen>:
+    BoxLayout:
+        id: battle_root
+        orientation: 'vertical'
+        size_hint: 1.0, 1.0
+        padding: 10
+        spacing: 10
+
+        BoxLayout:
+            id: battle_area
+            size_hint: 1.0, 0.6
+
+            AnchorLayout:
+                id: creature_area
+                size_hint: 0.5, 1.0
+
+            AnchorLayout:
+                id: player_area
+                size_hint: 0.5, 1.0
+
+        AnchorLayout:
+            id: keyboard_area
+            size_hint: 1.0, 0.1
+
+            MidiKeyboard:
+                id: kb
+                anchor_x: 'left'
+                anchor_y: 'center'
+                size_hint: 1.0, 1.0
+
+        BoxLayout:
+            id: info_area
+            size_hint: 1.0, 0.3
+
+
+<MidiScreen>:
+    BoxLayout:
+        id: midi_root
+        orientation: 'vertical'
+        size_hint: 1.0, 1.0
+        padding: 10
+        spacing: 10
+
+        AnchorLayout:
+            id: midi_list_layout
+
+        AnchorLayout:
+            id: keyboard_area
+
+            MidiKeyboard:
+                id: kb
+                anchor_x: 'center'
+                anchor_y: 'center'
+                size_hint: 0.9, 0.9
+
+
 <WhiteKey>:
     canvas:
         Color:
