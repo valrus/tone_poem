@@ -1,6 +1,5 @@
 from kivy.event import EventDispatcher
 from kivy.properties import BooleanProperty, ObjectProperty
-from kivy.properties import ReferenceListProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.widget import Widget
 
