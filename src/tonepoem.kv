@@ -1,5 +1,10 @@
 #:kivy 1.1.0
 
+<PCWidget>:
+    Image:
+        source: root.image_source
+
+
 <BattleScreen>:
     BoxLayout:
         id: battle_root
@@ -16,8 +21,9 @@
                 id: creature_area
                 size_hint: 0.5, 1.0
 
-            AnchorLayout:
+            BoxLayout:
                 id: player_area
+                orientation: 'vertical'
                 size_hint: 0.5, 1.0
 
         AnchorLayout:

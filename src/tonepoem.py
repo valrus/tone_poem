@@ -5,6 +5,8 @@ from kivy.uix.screenmanager import ScreenManager, SlideTransition
 from midi_screen import MidiScreen
 from battle_screen import BattleScreen
 
+from party import Party
+
 
 class TonePoemGame(ScreenManager):
     def __init__(self, **kw):
@@ -35,8 +37,10 @@ class TonePoemGame(ScreenManager):
 class TonePoemApp(App):
     def build(self):
         sm = TonePoemGame()
+        party = Party()
         sm.add_widget(MidiScreen(name='midi'))
-        sm.add_widget(BattleScreen(name='battle'))
+        sm.add_widget(BattleScreen(name='battle',
+                                   party=party))
         return sm
 
 
