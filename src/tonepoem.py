@@ -1,3 +1,10 @@
+import kivy
+kivy.require('1.1.2')
+
+from kivy.config import Config
+Config.set('graphics', 'width', '1200')
+Config.set('graphics', 'height', '800')
+
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, SlideTransition
@@ -5,7 +12,7 @@ from kivy.uix.screenmanager import ScreenManager, SlideTransition
 from midi_screen import MidiScreen
 from battle_screen import BattleScreen
 
-from party import Party
+from party import PlayerParty
 
 
 class TonePoemGame(ScreenManager):
@@ -37,7 +44,7 @@ class TonePoemGame(ScreenManager):
 class TonePoemApp(App):
     def build(self):
         sm = TonePoemGame()
-        party = Party()
+        party = PlayerParty()
         sm.add_widget(MidiScreen(name='midi'))
         sm.add_widget(BattleScreen(name='battle',
                                    party=party))
