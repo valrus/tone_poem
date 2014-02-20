@@ -5,10 +5,10 @@ from kivy.clock import Clock
 
 import mingus.core.value as value
 from mingus.midi import fluidsynth
-from mingus.containers.Bar import Bar
-from mingus.containers.Composition import Composition
-from mingus.containers.Note import Note
-from mingus.containers.Track import Track
+from mingus.containers.bar import Bar
+from mingus.containers.composition import Composition
+from mingus.containers.note import Note
+from mingus.containers.track import Track
 
 from mingushelpers import MidiPercussion, DRUM_TRACK
 

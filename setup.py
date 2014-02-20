@@ -2,13 +2,14 @@
 from setuptools import setup, find_packages
 
 setup (
-  name = "whatever",
+  name = "tone_poem",
   version = "0.1",
-  description="whatever",
-  author="me",
+  description="A thing.",
+  author="valrus",
   author_email="", # Removed to limit spam harvesting.
   url="",
   package_dir = {'': 'src'},
   packages = find_packages("src", exclude="tests"),
+  install_requires = ["mingus"],
   zip_safe = True
 )
