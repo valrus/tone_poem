@@ -1,4 +1,6 @@
-from kivy.properties import StringProperty
+import os
+
+from kivy.properties import StringProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import Screen
 
@@ -16,6 +18,9 @@ class CreatureWidget(AnchorLayout):
 
 
 class BattleScreen(Screen):
+    music_player = ObjectProperty(MusicPlayer(os.path.join("midi",
+                                                           "simplebeat.mid")))
+
     def __init__(self, **kw):
         self.party = kw.pop('party')
         self.beasties = BeastieParty()
@@ -39,10 +44,14 @@ class BattleScreen(Screen):
         print([cw.pos for cw in self.creature_widgets])
         print([cw.size for cw in self.creature_widgets])
 
-        self.music = MusicPlayer()
+        self.music_player.watchers.add(self)
+        self.register_event_type('on_bar')
 
     def on_enter(self):
-        self.music.play()
+        self.music_player.play()
 
     def on_pre_leave(self):
-        self.music.stop()
+        self.music_player.stop()
+
+    def on_bar(self, *args):
+        print("bar")

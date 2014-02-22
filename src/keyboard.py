@@ -3,32 +3,29 @@ from kivy.properties import BooleanProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.widget import Widget
 
-import midimsg
-import rtmidi
+import mido
 from mingushelpers import BLACK_KEYS, WHITE_KEYS
 
 
 class MidiInputDispatcher(EventDispatcher):
     def __init__(self, **kw):
-        self.mi = rtmidi.MidiIn()
-        self.port = None
+        self.port = mido.open_input()
         self.watchers = set()
         self.register_event_type('on_midi')
         super(MidiInputDispatcher, self).__init__(**kw)
 
     def available_ports(self):
         # need to poll this
-        return dict(enumerate(self.mi.get_ports()))
+        return dict(enumerate(mido.get_input_names()))
 
     def dispatch_midi(self, *args):
         for watcher in self.watchers:
             watcher.dispatch('on_midi', *args)
 
-    def open_port(self, port):
-        self.mi.cancel_callback()
-        self.mi.close_port()
-        self.mi.open_port(port)
-        self.mi.set_callback(self.dispatch_midi)
+    def open_port(self, portName):
+        self.port.close()
+        print(portName)
+        self.port = mido.open_input(portName, callback=self.dispatch_midi)
 
     def on_midi(self, *args):
         pass
@@ -60,7 +57,7 @@ class MidiKeyboard(AnchorLayout):
         super(MidiKeyboard, self).__init__(**kw)
 
     def midi_port_changed(self, list_adapter, *args):
-        self.midi_in.open_port(list_adapter.selection[0].index)
+        self.midi_in.open_port(list_adapter.selection[0].text)
 
     def on_keybox(self, instance, value):
         for index, k in enumerate(WHITE_KEYS):
@@ -83,10 +80,8 @@ class MidiKeyboard(AnchorLayout):
             self.keybox.add_widget(key)
             self.keys[k] = key
 
-    def on_midi(self, *args):
-        midi_data, extra_data = args
-        msg = midimsg.MidiMessage(midi_data)
-        if msg.status == midimsg.MidiStatus.noteOn:
-            self.keys[msg.data1 % 12].pressed = True
-        elif msg.status == midimsg.MidiStatus.noteOff:
-            self.keys[msg.data1 % 12].pressed = False
+    def on_midi(self, msg):
+        if msg.type == 'note_on':
+            self.keys[msg.note % 12].pressed = (msg.velocity > 0)
+        elif msg.type == 'note_off':
+            self.keys[msg.note % 12].pressed = False
