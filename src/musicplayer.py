@@ -27,8 +27,8 @@ class MusicPlayer(EventDispatcher):
         # number, multiplied by 3.
         num_beats, beat_unit = self.metronome[0].meter
         beats_per_measure = Fraction(num_beats, 1 if num_beats % 3 else 3)
-        beat_length = Fraction(60, self.tempo)
-        self.bar_interval = float(beats_per_measure * beat_length)
+        self.beat_length = Fraction(60, self.tempo)
+        self.bar_interval = float(beats_per_measure * self.beat_length)
 
         self.register_event_type('on_bar')
         super(MusicPlayer, self).__init__(**kw)
