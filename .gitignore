@@ -20,3 +20,4 @@ src/midi
 src/sounds
 src/sprites
 .mr.developer.cfg
+expt_*.py
