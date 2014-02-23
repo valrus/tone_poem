@@ -12,6 +12,7 @@ from kivy.uix.screenmanager import ScreenManager, SlideTransition
 from midi_screen import MidiScreen
 from battle_screen import BattleScreen
 
+from mingus.midi import fluidsynth
 from party import PlayerParty
 
 
@@ -43,11 +44,12 @@ class TonePoemGame(ScreenManager):
 
 class TonePoemApp(App):
     def build(self):
+        fluidsynth.init('sounds/FluidR3_GM.sf2')
+
         sm = TonePoemGame()
         party = PlayerParty()
         sm.add_widget(MidiScreen(name='midi'))
-        sm.add_widget(BattleScreen(name='battle',
-                                   party=party))
+        sm.add_widget(BattleScreen(name='battle', party=party))
         return sm
 
 

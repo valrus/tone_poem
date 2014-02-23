@@ -33,8 +33,6 @@ class MusicPlayer(EventDispatcher):
         self.register_event_type('on_bar')
         super(MusicPlayer, self).__init__(**kw)
 
-        fluidsynth.init('sounds/FluidR3_GM.sf2')
-
     def _set_up_metronome(self):
         metronome = Track()
         bar = Bar('C', (4, 4))
