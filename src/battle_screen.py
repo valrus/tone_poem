@@ -1,4 +1,5 @@
 import os
+from functools import partial
 from threading import Thread
 
 from kivy.animation import Animation
@@ -6,7 +7,10 @@ from kivy.properties import StringProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import Screen
 
+from mingus.midi import fluidsynth
+from mingus.containers.Note import Note
 from musicplayer import MusicPlayer
+from mingushelpers import DRUM_TRACK
 from party import BeastieParty
 from tools import y_iterator
 
@@ -20,22 +24,31 @@ class CreatureWidget(AnchorLayout):
         self.creature = creature
         self.image_source = self.creature.atlas
 
+    def play_sound(self, index, *args):
+        print(self.creature.sounds[index])
+        print(fluidsynth.initialized)
+        note = Note().from_int(self.creature.sounds[index])
+        note.velocity = 107
+        note.channel = DRUM_TRACK
+        t = Thread(
+            target=fluidsynth.play_Note,
+            args=(note, )
+        )
+        t.start()
+
     def _make_animation(self, flashDuration):
         otherkw = {
             'duration': flashDuration
         }
-        anim = sum(
-            (
-                Animation(**dict(kw, **otherkw))
-                for kw in self.creature.anim_kw[1:]
-            ),
-            Animation(**dict(self.creature.anim_kw[0], **otherkw))
-        )
-        return anim
+        anim1 = Animation(**dict(self.creature.anim_kw[0], **otherkw))
+        anim1.bind(on_start=partial(self.play_sound, 0))
+        anim2 = Animation(**dict(self.creature.anim_kw[1], **otherkw))
+        anim2.bind(on_start=partial(self.play_sound, 1))
+        return anim1 + anim2
 
     def flash(self, length):
-        first = self._make_animation(length / 4.)
-        second = self._make_animation(length / 4.)
+        first = self._make_animation(length)
+        second = self._make_animation(length)
         t = Thread(
             target=(first + second).start,
             args=(self.ids.sprite, )
@@ -75,7 +88,7 @@ class BattleScreen(Screen):
 
     def on_enter(self):
         self.music_player.play()
-        self.creature_widgets[0].flash(self.music_player.beat_length)
+        self.creature_widgets[0].flash(self.music_player.beat_length / 8.)
 
     def on_pre_leave(self):
         self.music_player.stop()

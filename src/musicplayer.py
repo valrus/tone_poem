@@ -37,8 +37,8 @@ class MusicPlayer(EventDispatcher):
         metronome = Track()
         bar = Bar('C', (4, 4))
         metronome.add_bar(bar)
-        kick = Note().from_int(MidiPercussion.BassDrum2)
-        kick.velocity = 100
+        kick = Note().from_int(MidiPercussion.BassDrum1)
+        kick.velocity = 120
         kick.channel = DRUM_TRACK
         for i in range(4):
             bar.place_notes(kick, value.quarter)
