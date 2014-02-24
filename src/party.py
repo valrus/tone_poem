@@ -1,4 +1,5 @@
-from creature import PlayerCharacter, Beastie
+from beastie import Beastie
+from creature import PlayerCharacter
 
 
 class Party(object):

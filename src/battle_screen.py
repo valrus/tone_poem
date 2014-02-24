@@ -55,10 +55,6 @@ class BattleScreen(Screen):
                 self.creature_widgets[-1]
             )
 
-        print([cw.anchor_y for cw in self.creature_widgets])
-        print([cw.pos for cw in self.creature_widgets])
-        print([cw.size for cw in self.creature_widgets])
-
         self.music_player.watchers.add(self)
         self.register_event_type('on_bar')
 

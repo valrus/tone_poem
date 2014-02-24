@@ -47,7 +47,3 @@ class Creature(object):
 
 class PlayerCharacter(Creature):
     pass
-
-
-class Beastie(Creature):
-    pass
