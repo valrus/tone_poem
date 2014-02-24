@@ -24,33 +24,9 @@ class CreatureWidget(AnchorLayout):
         self.creature = creature
         self.image_source = self.creature.atlas
 
-    def play_sound(self, index, *args):
-        print(self.creature.sounds[index])
-        print(fluidsynth.initialized)
-        note = Note().from_int(self.creature.sounds[index])
-        note.velocity = 107
-        note.channel = DRUM_TRACK
-        t = Thread(
-            target=fluidsynth.play_Note,
-            args=(note, )
-        )
-        t.start()
-
-    def _make_animation(self, flashDuration):
-        otherkw = {
-            'duration': flashDuration
-        }
-        anim1 = Animation(**dict(self.creature.anim_kw[0], **otherkw))
-        anim1.bind(on_start=partial(self.play_sound, 0))
-        anim2 = Animation(**dict(self.creature.anim_kw[1], **otherkw))
-        anim2.bind(on_start=partial(self.play_sound, 1))
-        return anim1 + anim2
-
     def flash(self, length):
-        first = self._make_animation(length)
-        second = self._make_animation(length)
         t = Thread(
-            target=(first + second).start,
+            target=self.creature.anim.build(length).start,
             args=(self.ids.sprite, )
         )
         t.start()
@@ -88,7 +64,7 @@ class BattleScreen(Screen):
 
     def on_enter(self):
         self.music_player.play()
-        self.creature_widgets[0].flash(self.music_player.beat_length / 8.)
+        self.creature_widgets[0].flash(self.music_player.beat_length)
 
     def on_pre_leave(self):
         self.music_player.stop()
