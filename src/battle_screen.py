@@ -1,7 +1,9 @@
 import os
+from itertools import chain
 from threading import Thread
 
-from kivy.properties import StringProperty, ObjectProperty
+from kivy.clock import Clock
+from kivy.properties import StringProperty, ObjectProperty, NumericProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import Screen
 
@@ -13,13 +15,15 @@ from tools import y_iterator
 class CreatureWidget(AnchorLayout):
     image_source = StringProperty(None)
     creature = ObjectProperty(None)
+    beat_length = NumericProperty(1.0)
 
     def __init__(self, creature, **kw):
         super(CreatureWidget, self).__init__(**kw)
         self.creature = creature
         self.image_source = self.creature.atlas
 
-    def flash(self, length):
+    def flash(self, *args):
+        length = self.beat_length
         t = Thread(
             target=self.creature.anim.build(length).start,
             args=(self.ids.sprite, )
@@ -30,15 +34,21 @@ class CreatureWidget(AnchorLayout):
 class BattleScreen(Screen):
     music_player = ObjectProperty(MusicPlayer(os.path.join("midi",
                                                            "simplebeat.mid")))
+    beat_length = NumericProperty(1.0)
 
     def __init__(self, **kw):
         self.party = kw.pop('party')
         self.beasties = BeastieParty()
+        self.on_deck = None
         super(BattleScreen, self).__init__(**kw)
 
+        self.player_widgets = []
         for pc in self.party.members:
-            self.ids.player_area.add_widget(
+            self.player_widgets.append(
                 CreatureWidget(pc)
+            )
+            self.ids.player_area.add_widget(
+                self.player_widgets[-1]
             )
 
         self.creature_widgets = []
@@ -49,16 +59,26 @@ class BattleScreen(Screen):
             self.ids.beastie_area.add_widget(
                 self.creature_widgets[-1]
             )
+        # This line is for testing!
+        self.on_deck = self.creature_widgets[0]
 
         self.music_player.watchers.add(self)
         self.register_event_type('on_bar')
 
     def on_enter(self):
+        self.beat_length = self.music_player.beat_length
         self.music_player.play()
-        self.creature_widgets[0].flash(self.music_player.beat_length)
 
     def on_pre_leave(self):
         self.music_player.stop()
 
+    def on_beat_length(self, *args):
+        for w in chain(self.player_widgets, self.creature_widgets):
+            w.beat_length = self.beat_length
+
     def on_bar(self, *args):
-        print("bar")
+        if self.on_deck:
+            Clock.schedule_once(
+                self.on_deck.flash,
+                self.beat_length * (self.on_deck.creature.anim.beat - 1)
+            )
