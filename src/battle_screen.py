@@ -1,16 +1,11 @@
 import os
-from functools import partial
 from threading import Thread
 
-from kivy.animation import Animation
 from kivy.properties import StringProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import Screen
 
-from mingus.midi import fluidsynth
-from mingus.containers.Note import Note
 from musicplayer import MusicPlayer
-from mingushelpers import DRUM_TRACK
 from party import BeastieParty
 from tools import y_iterator
 
