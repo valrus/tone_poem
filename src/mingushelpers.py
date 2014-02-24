@@ -13,52 +13,57 @@ def enum(*sequential, **named):
     return type('Enum', (), enums)
 
 
-MidiPercussion = enum(
-    BassDrum2=23,
-    BassDrum1=24,
-    SideStick_Rimshot=25,
-    SnareDrum1=26,
-    HandClap=27,
-    SnareDrum2=28,
-    LowTom2=29,
-    ClosedHihat=30,
-    LowTom1=31,
-    PedalHihat=32,
-    MidTom2=33,
-    OpenHihat=34,
-    MidTom1=35,
-    HighTom2=36,
-    CrashCymbal1=37,
-    HighTom1=38,
-    RideCymbal1=39,
-    ChineseCymbal=40,
-    RideBell=41,
-    Tambourine=42,
-    SplashCymbal=43,
-    Cowbell=44,
-    CrashCymbal2=45,
-    VibraSlap=46,
-    RideCymbal2=47,
-    HighBongo=48,
-    LowBongo=49,
-    MuteHighConga=50,
-    OpenHighConga=51,
-    LowConga=52,
-    HighTimbale=53,
-    LowTimbale=54,
-    HighAgogo=55,
-    LowAgogo=56,
-    Cabasa=57,
-    Maracas=58,
-    ShortWhistle=59,
-    LongWhistle=60,
-    ShortGuiro=61,
-    LongGuiro=62,
-    Claves=63,
-    HighWoodBlock=64,
-    LowWoodBlock=65,
-    MuteCuica=66,
-    OpenCuica=67,
-    MuteTriangle=68,
-    OpenTriangle=69
-)
+def _drumNote_from_int(i):
+    n = Note().from_int(i)
+    n.channel = DRUM_TRACK
+    return n
+
+
+class MidiPercussion(object):
+    BassDrum2 = _drumNote_from_int(23)
+    BassDrum1 = _drumNote_from_int(24)
+    SideStick_Rimshot = _drumNote_from_int(25)
+    SnareDrum1 = _drumNote_from_int(26)
+    HandClap = _drumNote_from_int(27)
+    SnareDrum2 = _drumNote_from_int(28)
+    LowTom2 = _drumNote_from_int(29)
+    ClosedHihat = _drumNote_from_int(30)
+    LowTom1 = _drumNote_from_int(31)
+    PedalHihat = _drumNote_from_int(32)
+    MidTom2 = _drumNote_from_int(33)
+    OpenHihat = _drumNote_from_int(34)
+    MidTom1 = _drumNote_from_int(35)
+    HighTom2 = _drumNote_from_int(36)
+    CrashCymbal1 = _drumNote_from_int(37)
+    HighTom1 = _drumNote_from_int(38)
+    RideCymbal1 = _drumNote_from_int(39)
+    ChineseCymbal = _drumNote_from_int(40)
+    RideBell = _drumNote_from_int(41)
+    Tambourine = _drumNote_from_int(42)
+    SplashCymbal = _drumNote_from_int(43)
+    Cowbell = _drumNote_from_int(44)
+    CrashCymbal2 = _drumNote_from_int(45)
+    VibraSlap = _drumNote_from_int(46)
+    RideCymbal2 = _drumNote_from_int(47)
+    HighBongo = _drumNote_from_int(48)
+    LowBongo = _drumNote_from_int(49)
+    MuteHighConga = _drumNote_from_int(50)
+    OpenHighConga = _drumNote_from_int(51)
+    LowConga = _drumNote_from_int(52)
+    HighTimbale = _drumNote_from_int(53)
+    LowTimbale = _drumNote_from_int(54)
+    HighAgogo = _drumNote_from_int(55)
+    LowAgogo = _drumNote_from_int(56)
+    Cabasa = _drumNote_from_int(57)
+    Maracas = _drumNote_from_int(58)
+    ShortWhistle = _drumNote_from_int(59)
+    LongWhistle = _drumNote_from_int(60)
+    ShortGuiro = _drumNote_from_int(61)
+    LongGuiro = _drumNote_from_int(62)
+    Claves = _drumNote_from_int(63)
+    HighWoodBlock = _drumNote_from_int(64)
+    LowWoodBlock = _drumNote_from_int(65)
+    MuteCuica = _drumNote_from_int(66)
+    OpenCuica = _drumNote_from_int(67)
+    MuteTriangle = _drumNote_from_int(68)
+    OpenTriangle = _drumNote_from_int(69)

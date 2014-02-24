@@ -7,10 +7,9 @@ from kivy.event import EventDispatcher
 import mingus.core.value as value
 from mingus.midi import fluidsynth
 from mingus.containers.Bar import Bar
-from mingus.containers.Note import Note
 from mingus.containers.Track import Track
 
-from mingushelpers import MidiPercussion, DRUM_TRACK
+from mingushelpers import MidiPercussion
 
 
 class MusicPlayer(EventDispatcher):
@@ -37,9 +36,8 @@ class MusicPlayer(EventDispatcher):
         metronome = Track()
         bar = Bar('C', (4, 4))
         metronome.add_bar(bar)
-        kick = Note().from_int(MidiPercussion.BassDrum1)
+        kick = MidiPercussion.BassDrum1
         kick.velocity = 120
-        kick.channel = DRUM_TRACK
         for i in range(4):
             bar.place_notes(kick, value.quarter)
         return metronome
