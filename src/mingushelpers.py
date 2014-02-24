@@ -1,3 +1,27 @@
+from threading import Thread
+from time import sleep
+
+from mingus.containers.Note import Note
+from mingus.containers.NoteContainer import NoteContainer
+from mingus.midi import fluidsynth
+
+
+def play_stop_NoteContainer(noteContainer, duration):
+    fluidsynth.play_NoteContainer(noteContainer)
+    sleep(duration)
+    fluidsynth.stop_NoteContainer(noteContainer)
+
+
+def thread_NoteContainer(notes, duration, *args):
+    nc = NoteContainer(notes)
+    t = Thread(
+        target=play_stop_NoteContainer,
+        args=(nc, duration)
+    )
+    t.start()
+    return t
+
+
 WHITE_KEYS = [0, 2, 4, 5, 7, 9, 11]
 BLACK_KEYS = [1, 3, 6, 8, 10]
 
