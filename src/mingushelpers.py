@@ -1,9 +1,51 @@
 from threading import Thread
 from time import sleep
 
+from mingus.containers.Instrument import MidiInstrument
 from mingus.containers.Note import Note
 from mingus.containers.NoteContainer import NoteContainer
 from mingus.midi import fluidsynth
+import mingus.core.intervals as intervals
+
+# Music theory
+
+NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+MINOR_SCALE_INTERVALS = set([
+    intervals.unison,
+    intervals.minor_second,
+    intervals.minor_third,
+    intervals.perfect_fourth,
+    intervals.perfect_fifth,
+    intervals.minor_sixth,
+    intervals.minor_seventh
+])
+
+MAJOR_SCALE_INTERVALS = set([
+    intervals.unison,
+    intervals.major_second,
+    intervals.major_third,
+    intervals.perfect_fourth,
+    intervals.perfect_fifth,
+    intervals.major_sixth,
+    intervals.major_seventh
+])
+
+ALL_INTERVALS = (
+    MINOR_SCALE_INTERVALS
+    | MAJOR_SCALE_INTERVALS
+    | set([intervals.minor_fifth])
+)
+
+# Playing things
+
+# MIDI standard: tracks on channel 10 (channels zero-indexed in Python)
+# are drum tracks.
+DRUM_TRACK = 9
+BEASTIE_CHANNEL = 14
+PLAYER_CHANNEL = 15
+
+MIDI_INSTRS = {name: num for num, name in enumerate(MidiInstrument.names)}
 
 
 def play_stop_NoteContainer(noteContainer, duration):
@@ -12,22 +54,16 @@ def play_stop_NoteContainer(noteContainer, duration):
     fluidsynth.stop_NoteContainer(noteContainer)
 
 
-def thread_NoteContainer(notes, duration, *args):
+def thread_NoteContainer(notes, duration, instr, *args):
     nc = NoteContainer(notes)
+    if instr is not None:
+        fluidsynth.set_instrument(nc[0].channel, instr)
     t = Thread(
         target=play_stop_NoteContainer,
         args=(nc, duration)
     )
     t.start()
     return t
-
-
-WHITE_KEYS = [0, 2, 4, 5, 7, 9, 11]
-BLACK_KEYS = [1, 3, 6, 8, 10]
-
-# MIDI standard: tracks on channel 10 (channels zero-indexed in Python)
-# are drum tracks.
-DRUM_TRACK = 9
 
 
 def enum(*sequential, **named):
@@ -91,3 +127,9 @@ class MidiPercussion(object):
     OpenCuica = _drumNote_from_int(67)
     MuteTriangle = _drumNote_from_int(68)
     OpenTriangle = _drumNote_from_int(69)
+
+
+# Drawing things
+
+WHITE_KEYS = [0, 2, 4, 5, 7, 9, 11]
+BLACK_KEYS = [1, 3, 6, 8, 10]

@@ -1,4 +1,5 @@
 import os
+from functools import partial
 from itertools import chain
 from threading import Thread
 
@@ -21,17 +22,18 @@ class CreatureWidget(AnchorLayout):
         super(CreatureWidget, self).__init__(**kw)
         self.creature = creature
         self.image_source = self.creature.atlas
+        self.thread = None
 
     def flash(self, *args):
         length = self.beat_length
-        t = Thread(
+        self.thread = Thread(
             target=self.creature.anim.build(length).start,
             args=(self.ids.sprite, )
         )
-        t.start()
+        self.thread.start()
 
 
-class BattleScreen(Screen):
+class EncounterScreen(Screen):
     music_player = ObjectProperty(MusicPlayer(os.path.join("midi",
                                                            "simplebeat.mid")))
     beat_length = NumericProperty(1.0)
@@ -40,7 +42,7 @@ class BattleScreen(Screen):
         self.party = kw.pop('party')
         self.beasties = BeastieParty()
         self.on_deck = None
-        super(BattleScreen, self).__init__(**kw)
+        super(EncounterScreen, self).__init__(**kw)
 
         self.player_widgets = []
         for pc in self.party.members:
@@ -59,8 +61,6 @@ class BattleScreen(Screen):
             self.ids.beastie_area.add_widget(
                 self.creature_widgets[-1]
             )
-        # This line is for testing!
-        self.on_deck = self.creature_widgets[0]
 
         self.music_player.watchers.add(self)
         self.register_event_type('on_bar')
@@ -68,6 +68,8 @@ class BattleScreen(Screen):
     def on_enter(self):
         self.beat_length = self.music_player.beat_length
         self.music_player.play()
+        # This line is for testing!
+        self.on_deck = self.creature_widgets[0]
 
     def on_pre_leave(self):
         self.music_player.stop()
@@ -82,3 +84,9 @@ class BattleScreen(Screen):
                 self.on_deck.flash,
                 self.beat_length * (self.on_deck.creature.anim.beat - 1)
             )
+            for index, t in enumerate(self.on_deck.creature.attack.
+                                      schedule_times()):
+                Clock.schedule_once(
+                    partial(self.on_deck.creature.on_attack, index),
+                    self.beat_length * (t - 1)
+                )

@@ -10,7 +10,7 @@ from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, SlideTransition
 
 from midi_screen import MidiScreen
-from battle_screen import BattleScreen
+from encounter_screen import EncounterScreen
 
 from mingus.midi import fluidsynth
 from party import PlayerParty
@@ -49,7 +49,7 @@ class TonePoemApp(App):
         sm = TonePoemGame()
         party = PlayerParty()
         sm.add_widget(MidiScreen(name='midi'))
-        sm.add_widget(BattleScreen(name='battle', party=party))
+        sm.add_widget(EncounterScreen(name='battle', party=party))
         return sm
 
 

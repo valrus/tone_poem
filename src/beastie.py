@@ -1,9 +1,15 @@
 from functools import partial
+from random import choice
 
 from kivy.animation import Animation
 
+import mingus.core.notes as notes
+from mingus.containers.Note import Note
+
 from creature import Creature
 from mingushelpers import MidiPercussion, thread_NoteContainer
+from mingushelpers import ALL_INTERVALS, MIDI_INSTRS, BEASTIE_CHANNEL
+from mingushelpers import NOTE_NAMES
 
 
 class BeastieAnimation(object):
@@ -27,16 +33,34 @@ class BeastieAnimation(object):
         for i, s in enumerate(steps):
             s.bind(on_start=partial(thread_NoteContainer,
                                     self.sounds[i % len(self.kws)],
-                                    stepDuration))
+                                    stepDuration,
+                                    None))
         return sum(steps[1:], steps[0])
 
 
 class BeastieAttack(object):
-    pass
+    def schedule_times(self):
+        return [note_place[0] for note_place in self.note_placement]
 
 
 class IntervalAttack(BeastieAttack):
-    pass
+    def __init__(self, **kw):
+        self.start_notes = kw.get("start_notes")
+        self.intervals = kw.get("intervals", list(ALL_INTERVALS))
+        self.note_placement = kw["note_placement"]
+        self.instr = kw["instr"]
+        self.notes = None
+
+    def play(self, index):
+        if index == 0:
+            start_note_name = choice(self.start_notes)
+            start_note = Note(start_note_name)
+            start_note.channel = BEASTIE_CHANNEL
+            end_note = Note(choice(self.intervals)(start_note_name))
+            end_note.channel = BEASTIE_CHANNEL
+            self.notes = [start_note, end_note]
+        duration = self.note_placement[index][1]
+        thread_NoteContainer(self.notes[index], duration, self.instr)
 
 
 class Beastie(Creature):
@@ -50,3 +74,11 @@ class Beastie(Creature):
                 MidiPercussion.LowWoodBlock
             )
         )
+        self.attack = IntervalAttack(
+            start_notes=NOTE_NAMES,
+            note_placement=[(4, 0.5), (4.5, 0.5)],
+            instr=MIDI_INSTRS['Drawbar Organ']
+        )
+
+    def on_attack(self, index, *args):
+        self.attack.play(index)
