@@ -90,3 +90,4 @@ class EncounterScreen(Screen):
                     partial(self.on_deck.creature.on_attack, index),
                     self.beat_length * (t - 1)
                 )
+            self.on_deck = None
