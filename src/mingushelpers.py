@@ -5,37 +5,14 @@ from mingus.containers.Instrument import MidiInstrument
 from mingus.containers.Note import Note
 from mingus.containers.NoteContainer import NoteContainer
 from mingus.midi import fluidsynth
-import mingus.core.intervals as intervals
 
 # Music theory
 
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
-MINOR_SCALE_INTERVALS = set([
-    intervals.unison,
-    intervals.minor_second,
-    intervals.minor_third,
-    intervals.perfect_fourth,
-    intervals.perfect_fifth,
-    intervals.minor_sixth,
-    intervals.minor_seventh
-])
-
-MAJOR_SCALE_INTERVALS = set([
-    intervals.unison,
-    intervals.major_second,
-    intervals.major_third,
-    intervals.perfect_fourth,
-    intervals.perfect_fifth,
-    intervals.major_sixth,
-    intervals.major_seventh
-])
-
-ALL_INTERVALS = (
-    MINOR_SCALE_INTERVALS
-    | MAJOR_SCALE_INTERVALS
-    | set([intervals.minor_fifth])
-)
+MAJOR_SCALE_INTERVALS = set([str(i) for i in range(1, 8)])
+MINOR_SCALE_INTERVALS = set(["1", "b2", "b3", "4", "5", "b6", "b7"])
+ALL_INTERVALS = (MINOR_SCALE_INTERVALS | MAJOR_SCALE_INTERVALS | set(["b5"]))
 
 # Playing things
 
