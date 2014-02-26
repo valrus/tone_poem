@@ -14,8 +14,8 @@ from mingushelpers import MidiPercussion
 
 class MusicPlayer(EventDispatcher):
     def __init__(self, midiFile, **kw):
+        self.tempo = 80
         self.metronome = self._set_up_metronome()
-        self.tempo = 120
         self.watchers = set()
 
         # When the upper number in the time signature is NOT a multiple of 3,
@@ -47,7 +47,7 @@ class MusicPlayer(EventDispatcher):
             watcher.dispatch('on_bar', *args)
         t = Thread(
             target=fluidsynth.play_Track,
-            args=(self.metronome, )
+            args=(self.metronome, 1, self.tempo)
         )
         t.start()
 
