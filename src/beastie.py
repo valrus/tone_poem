@@ -53,11 +53,10 @@ class IntervalAttack(BeastieAttack):
 
     def play(self, index):
         if index == 0:
-            start_note_name = choice(self.start_notes)
-            start_note = Note(start_note_name)
+            start_note = choice(self.start_notes)
             start_note.channel = BEASTIE_CHANNEL
-            end_note = Note(choice(self.intervals)(start_note_name))
-            end_note.channel = BEASTIE_CHANNEL
+            end_note = Note(start_note)
+            end_note.transpose(choice(self.intervals))
             self.notes = [start_note, end_note]
         duration = self.note_placement[index][1]
         thread_NoteContainer(self.notes[index], duration, self.instr)
@@ -75,7 +74,7 @@ class Beastie(Creature):
             )
         )
         self.attack = IntervalAttack(
-            start_notes=NOTE_NAMES,
+            start_notes=[Note(n, 4) for n in NOTE_NAMES],
             note_placement=[(4, 0.5), (4.5, 0.5)],
             instr=MIDI_INSTRS['Drawbar Organ']
         )
