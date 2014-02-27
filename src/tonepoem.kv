@@ -64,7 +64,9 @@
                 size_hint: 0.9, 0.9
 
 
+#:set white_key_w 1.0 / 7.0
 <WhiteKey>:
+    size_hint: (white_key_w, 1)
     canvas:
         Color:
             rgb: (0.7, 1, 0.7) if self.pressed else (0.8, 0.8, 0.8)
@@ -74,14 +76,16 @@
             size: self.size
 
         Color:
-            rgb: (0.7, 1, 0.7) if self.pressed else (1, 1, 1)
+            rgb: (0.7, 1, 0.7) if self.pressed else self.rgb
 
         Rectangle:
             pos: self.x + 1, self.y + 1
             size: self.width - 2, self.height - 2
 
 
+#:set black_key_w 1.0 / 10.0
 <BlackKey>:
+    size_hint: (black_key_w, 0.6)
     canvas:
         Color:
             rgb: (0.3, 0.5, 0.3) if self.pressed else (0, 0, 0)
@@ -90,16 +94,65 @@
             pos: self.pos
             size: self.size
 
-    canvas:
         Color:
-            rgb: (0.3, 0.5, 0.3) if self.pressed else (0.2, 0.2, 0.2)
+            rgb: (0.3, 0.5, 0.3) if self.pressed else self.rgb
 
         Rectangle:
             pos: self.x + 1, self.y + 1
             size: self.width - 2, self.height - 2
+
 
 <MidiKeyboard>:
     keybox: box
 
     RelativeLayout:
         id: box
+
+        WhiteKey:
+            id: C
+            index: 0
+            pos_hint: {'x': white_key_w * 0}
+        WhiteKey:
+            id: D
+            index: 2
+            pos_hint: {'x': white_key_w * 1}
+        WhiteKey:
+            id: E
+            index: 4
+            pos_hint: {'x': white_key_w * 2}
+        WhiteKey:
+            id: F
+            index: 5
+            pos_hint: {'x': white_key_w * 3}
+        WhiteKey:
+            id: G
+            index: 7
+            pos_hint: {'x': white_key_w * 4}
+        WhiteKey:
+            id: A
+            index: 9
+            pos_hint: {'x': white_key_w * 5}
+        WhiteKey:
+            id: B
+            index: 11
+            pos_hint: {'x': white_key_w * 6}
+        BlackKey:
+            id: Db
+            index: 1
+            pos_hint: {'x': (white_key_w * 1) - (black_key_w / 2.0), 'top': 1}
+        BlackKey:
+            id: Eb
+            index: 3
+            pos_hint: {'x': (white_key_w * 2) - (black_key_w / 2.0), 'top': 1}
+        BlackKey:
+            id: Gb
+            index: 6
+            pos_hint: {'x': (white_key_w * 4) - (black_key_w / 2.0), 'top': 1}
+        BlackKey:
+            id: Ab
+            index: 8
+            pos_hint: {'x': (white_key_w * 5) - (black_key_w / 2.0), 'top': 1}
+        BlackKey:
+            id: Bb
+            index: 10
+            pos_hint: {'x': (white_key_w * 6) - (black_key_w / 2.0), 'top': 1}
