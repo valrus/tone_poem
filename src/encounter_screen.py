@@ -4,9 +4,11 @@ from itertools import chain
 from threading import Thread
 
 from kivy.clock import Clock
+from kivy.graphics import Color
 from kivy.properties import StringProperty, ObjectProperty, NumericProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import Screen
+from mingus.core.notes import note_to_int
 
 from musicplayer import MusicPlayer
 from party import BeastieParty
@@ -40,7 +42,7 @@ class EncounterScreen(Screen):
 
     def __init__(self, **kw):
         self.party = kw.pop('party')
-        self.beasties = BeastieParty()
+        self.beasties = BeastieParty(self)
         self.on_deck = None
         super(EncounterScreen, self).__init__(**kw)
 
@@ -90,4 +92,11 @@ class EncounterScreen(Screen):
                     partial(self.on_deck.creature.on_attack, index),
                     self.beat_length * (t - 1)
                 )
+
+    def on_beastie_attack(self, *args):
+        if self.on_deck:
+            note_highlight = self.on_deck.creature.attack.hl
+            if self.on_deck and note_highlight:
+                keyIndex = note_to_int(note_highlight.name)
+                self.ids.kb.keys[keyIndex].rgb = [1., 0.5, 0.5]
             self.on_deck = None

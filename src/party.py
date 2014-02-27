@@ -17,12 +17,15 @@ class PlayerParty(Party):
 
 
 class BeastieParty(Party):
-    def __init__(self):
+    def __init__(self, screen):
         self.members = [
             Beastie('Timothy',
-                    'sprites/landeel'),
+                    'sprites/landeel',
+                    screen),
             Beastie('Albert',
-                    'sprites/pinkelephant'),
+                    'sprites/pinkelephant',
+                    screen),
             Beastie('Nathan',
-                    'sprites/landeel'),
+                    'sprites/landeel',
+                    screen),
         ]

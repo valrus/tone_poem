@@ -1,4 +1,7 @@
-class Creature(object):
+from kivy.event import EventDispatcher
+
+
+class Creature(EventDispatcher):
     def __init__(self, name, atlasPath):
         self.name = name
         self.state = 'normal'

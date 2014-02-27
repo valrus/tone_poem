@@ -50,6 +50,7 @@ class IntervalAttack(BeastieAttack):
         self.note_placement = kw["note_placement"]
         self.instr = kw["instr"]
         self.notes = None
+        self.hl = None
 
     def play(self, index):
         if index == 0:
@@ -58,13 +59,17 @@ class IntervalAttack(BeastieAttack):
             end_note = Note(start_note)
             end_note.transpose(choice(self.intervals))
             self.notes = [start_note, end_note]
+            self.hl = start_note
         duration = self.note_placement[index][1]
         thread_NoteContainer(self.notes[index], duration, self.instr)
 
 
 class Beastie(Creature):
-    def __init__(self, name, atlasPath):
+    def __init__(self, name, atlasPath, screen):
         super(Beastie, self).__init__(name, atlasPath)
+        self.register_event_type('on_beastie_attack')
+        self.screen = screen
+        self.bind(on_beastie_attack=screen.on_beastie_attack)
         self.anim = BeastieAnimation(
             beat=2, duration=0.5,
             kws=({'color': [1, 0, 0, 1]}, {'color': [1, 1, 1, 1]}),
@@ -76,8 +81,13 @@ class Beastie(Creature):
         self.attack = IntervalAttack(
             start_notes=[Note(n, 4) for n in NOTE_NAMES],
             note_placement=[(4, 0.5), (4.5, 0.5)],
-            instr=MIDI_INSTRS['Drawbar Organ']
+            instr=MIDI_INSTRS['Drawbar Organ'],
         )
+        self.is_attacking = False
 
     def on_attack(self, index, *args):
         self.attack.play(index)
+        self.dispatch('on_beastie_attack')
+
+    def on_beastie_attack(self, *args):
+        pass
