@@ -31,7 +31,6 @@ class TonePoemGame(ScreenManager):
         self._kb = None
 
     def _on_kb_down(self, kb, keycode, text, modifiers):
-        print('The key', keycode, 'has been pressed.')
         if keycode[1] == 'left':
             self.transition = SlideTransition(direction='right')
             self.current = self.previous()
