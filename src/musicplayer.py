@@ -55,7 +55,6 @@ class MusicPlayer(EventDispatcher):
         pass
 
     def play(self):
-        print(self.bar_interval)
         Clock.schedule_once(self.play_bar)
         Clock.schedule_interval(self.play_bar, self.bar_interval)
 
