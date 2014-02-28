@@ -2,6 +2,7 @@ from functools import partial
 from random import choice
 
 from kivy.animation import Animation
+from kivy.properties import BooleanProperty
 
 import mingus.core.notes as notes
 from mingus.containers.Note import Note
@@ -65,13 +66,13 @@ class IntervalAttack(BeastieAttack):
 
 
 class Beastie(Creature):
-    def __init__(self, name, atlasPath, screen):
+    is_attacking = BooleanProperty(False)
+
+    def __init__(self, party, name, atlasPath):
         super(Beastie, self).__init__(name, atlasPath)
-        self.register_event_type('on_beastie_attack')
-        self.screen = screen
-        self.bind(on_beastie_attack=screen.on_beastie_attack)
+        self.party = party
         self.anim = BeastieAnimation(
-            beat=2, duration=0.5,
+            beat=2, duration=1,
             kws=({'color': [1, 0, 0, 1]}, {'color': [1, 1, 1, 1]}),
             sounds=(
                 MidiPercussion.HighWoodBlock,
@@ -83,11 +84,7 @@ class Beastie(Creature):
             note_placement=[(4, 0.5), (4.5, 0.5)],
             instr=MIDI_INSTRS['Drawbar Organ'],
         )
-        self.is_attacking = False
 
     def on_attack(self, index, *args):
         self.attack.play(index)
-        self.dispatch('on_beastie_attack')
-
-    def on_beastie_attack(self, *args):
-        pass
+        self.is_attacking = True

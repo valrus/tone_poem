@@ -42,7 +42,7 @@ class EncounterScreen(Screen):
 
     def __init__(self, **kw):
         self.party = kw.pop('party')
-        self.beasties = BeastieParty(self)
+        self.beasties = BeastieParty()
         self.on_deck = None
         super(EncounterScreen, self).__init__(**kw)
 
@@ -63,6 +63,7 @@ class EncounterScreen(Screen):
             self.ids.beastie_area.add_widget(
                 self.creature_widgets[-1]
             )
+            b.bind(is_attacking=self.on_beastie_attack)
 
         self.music_player.watchers.add(self)
         self.register_event_type('on_bar')
@@ -93,10 +94,9 @@ class EncounterScreen(Screen):
                     self.beat_length * (t - 1)
                 )
 
-    def on_beastie_attack(self, *args):
-        if self.on_deck:
-            note_highlight = self.on_deck.creature.attack.hl
-            if self.on_deck and note_highlight:
-                keyIndex = note_to_int(note_highlight.name)
-                self.ids.kb.keys[keyIndex].rgb = [1., 0.5, 0.5]
-            self.on_deck = None
+    def on_beastie_attack(self, beastie, *args):
+        note_highlight = beastie.attack.hl
+        if note_highlight:
+            keyIndex = note_to_int(note_highlight.name)
+            self.ids.kb.keys[keyIndex].rgb = [1., 0.5, 0.5]
+        self.on_deck = None
