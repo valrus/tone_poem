@@ -71,10 +71,12 @@ class MidiKeyboard(AnchorLayout):
         self.keys = None
         self.events = {}
         super(MidiKeyboard, self).__init__(**kw)
-        print(self.ids)
 
     def midi_port_changed(self, list_adapter, *args):
         self.midi_in.open_port(list_adapter.selection[0].text)
+
+    def on_keybox(self, *args):
+        print(self.ids)
 
     def on_midi(self, msg):
         if msg.type == 'note_on':
