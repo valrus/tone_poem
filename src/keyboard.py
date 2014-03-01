@@ -73,6 +73,7 @@ class MidiKeyboard(RelativeLayout):
         self.register_event_type('on_midi')
         self.keys = [None] * 12
         self.events = {}
+        self.watchers = set()
         super(MidiKeyboard, self).__init__(**kw)
 
     def midi_port_changed(self, list_adapter, *args):
@@ -89,3 +90,5 @@ class MidiKeyboard(RelativeLayout):
         elif msg.type == 'note_off':
             self.keys[msg.note % 12].pressed = False
             self.events[msg.note].set()
+        for watcher in self.watchers:
+            watcher.dispatch('on_midi', msg)
