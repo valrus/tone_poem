@@ -8,7 +8,7 @@ from mingus.midi import fluidsynth
 
 # Music theory
 
-NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+NOTE_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 
 MAJOR_SCALE_INTERVALS = set([str(i) for i in range(1, 8)])
 MINOR_SCALE_INTERVALS = set(["1", "b2", "b3", "4", "5", "b6", "b7"])
