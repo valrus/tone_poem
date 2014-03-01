@@ -25,6 +25,17 @@ PLAYER_CHANNEL = 15
 MIDI_INSTRS = {name: num for num, name in enumerate(MidiInstrument.names)}
 
 
+# TODO: Unit testable
+def isNoteOn(msg):
+    return msg.type == 'note_on' and msg.velocity > 0
+
+
+# TODO: Unit testable
+def isNoteOff(msg):
+    return msg.type == 'note_off' or (msg.type == 'note_on'
+                                      and msg.velocity == 0)
+
+
 def play_stop_NoteContainer(noteContainer, duration):
     fluidsynth.play_NoteContainer(noteContainer)
     sleep(duration)
