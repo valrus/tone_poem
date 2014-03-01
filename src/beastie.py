@@ -6,9 +6,11 @@ from kivy.properties import BooleanProperty
 
 import mingus.core.notes as notes
 from mingus.containers.Note import Note
+from mingus.containers.NoteContainer import NoteContainer
 
 from creature import Creature
 from mingushelpers import MidiPercussion, thread_NoteContainer
+from mingushelpers import isNoteOn, isNoteOff
 from mingushelpers import ALL_INTERVALS, MIDI_INSTRS, BEASTIE_CHANNEL
 from mingushelpers import NOTE_NAMES
 
@@ -39,6 +41,30 @@ class BeastieAnimation(object):
         return sum(steps[1:], steps[0])
 
 
+# TODO: Unit testable
+class NoteCollector(object):
+
+    """Gather notes into a NoteContainer as MIDI msgs come in."""
+
+    def __init__(self):
+        self.pending_notes = {}
+        self.received_notes = NoteContainer()
+
+    def hear(self, msg):
+        if isNoteOn(msg):
+            self.pending_notes[msg.note] = Note().from_int(msg.note)
+        elif isNoteOff(msg) and msg.note in self.pending_notes:
+            self.received_notes.add_notes(self.pending_notes.pop(msg.note))
+
+    def heard_count(self):
+        return len(self.received_notes)
+
+    def retrieve(self):
+        returnVal = self.received_notes
+        self.received_notes = None
+        return returnVal
+
+
 class BeastieAttack(object):
     def schedule_times(self):
         return [note_place[0] for note_place in self.note_placement]
@@ -52,6 +78,7 @@ class IntervalAttack(BeastieAttack):
         self.instr = kw["instr"]
         self.notes = None
         self.hl = None
+        self.ear = NoteCollector()
 
     def play(self, index):
         if index == 0:
@@ -64,12 +91,18 @@ class IntervalAttack(BeastieAttack):
         duration = self.note_placement[index][1]
         thread_NoteContainer(self.notes[index], duration, self.instr)
 
+    def handleNote(self, msg):
+        self.ear.hear(msg)
+        if self.ear.heard_count() >= 2:
+            print(self.ear.retrieve())
+
 
 class Beastie(Creature):
     is_attacking = BooleanProperty(False)
 
     def __init__(self, party, name, atlasPath):
         super(Beastie, self).__init__(name, atlasPath)
+        self.register_event_type('on_midi')
         self.party = party
         self.anim = BeastieAnimation(
             beat=2, duration=1,
@@ -88,3 +121,7 @@ class Beastie(Creature):
     def on_attack(self, index, *args):
         self.attack.play(index)
         self.is_attacking = True
+
+    def on_midi(self, msg):
+        if self.is_attacking:
+            self.attack.handleNote(msg)

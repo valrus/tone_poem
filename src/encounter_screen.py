@@ -36,8 +36,9 @@ class CreatureWidget(AnchorLayout):
 
 
 class EncounterScreen(Screen):
-    music_player = ObjectProperty(MusicPlayer(os.path.join("midi",
-                                                           "simplebeat.mid")))
+    music_player = ObjectProperty(
+        MusicPlayer(os.path.join("midi", "simplebeat.mid"))
+    )
     beat_length = NumericProperty(1.0)
 
     def __init__(self, **kw):
@@ -64,6 +65,7 @@ class EncounterScreen(Screen):
                 self.creature_widgets[-1]
             )
             b.bind(is_attacking=self.on_beastie_attack)
+            self.ids.kb.watchers.add(b)
 
         self.music_player.watchers.add(self)
         self.register_event_type('on_bar')
