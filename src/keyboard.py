@@ -10,7 +10,7 @@ from kivy.uix.widget import Widget
 import mido
 from mingus.containers.Note import Note
 from mingus.midi import fluidsynth
-from mingushelpers import BLACK_KEYS, WHITE_KEYS, PLAYER_CHANNEL, NOTE_NAME_SET
+from mingushelpers import PLAYER_CHANNEL
 
 
 class MidiInputDispatcher(EventDispatcher):
