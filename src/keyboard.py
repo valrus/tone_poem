@@ -4,13 +4,13 @@ from kivy.event import EventDispatcher
 from kivy.graphics import Color, Rectangle
 from kivy.properties import ObjectProperty, ListProperty
 from kivy.properties import BooleanProperty, NumericProperty
-from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
 import mido
 from mingus.containers.Note import Note
 from mingus.midi import fluidsynth
-from mingushelpers import BLACK_KEYS, WHITE_KEYS, PLAYER_CHANNEL
+from mingushelpers import BLACK_KEYS, WHITE_KEYS, PLAYER_CHANNEL, NOTE_NAME_SET
 
 
 class MidiInputDispatcher(EventDispatcher):
@@ -49,39 +49,39 @@ class KeyboardThread(threading.Thread):
         fluidsynth.stop_Note(self.note)
 
 
-class BlackKey(Widget):
+class KeyboardKey(Widget):
     pressed = BooleanProperty(False)
-    index = NumericProperty(0)
+    index = NumericProperty(None)
+
+    def on_index(self, obj, idx):
+        self.parent.keys[idx] = self
+
+
+class BlackKey(KeyboardKey):
     rgb = ListProperty([0.2, 0.2, 0.2])
 
 
-class WhiteKey(Widget):
-    pressed = BooleanProperty(False)
-    index = NumericProperty(0)
+class WhiteKey(KeyboardKey):
     rgb = ListProperty([1.0, 1.0, 1.0])
 
 
-class MidiKeyboard(AnchorLayout):
-    keybox = ObjectProperty(None)
+class MidiKeyboard(RelativeLayout):
     midi_in = ObjectProperty(MidiInputDispatcher())
 
     def __init__(self, **kw):
         self.midi_in.watchers.add(self)
         self.register_event_type('on_midi')
-        self.keys = None
+        self.keys = [None] * 12
         self.events = {}
         super(MidiKeyboard, self).__init__(**kw)
 
     def midi_port_changed(self, list_adapter, *args):
         self.midi_in.open_port(list_adapter.selection[0].text)
 
-    def on_keybox(self, *args):
-        print(self.ids)
-
     def on_midi(self, msg):
         if msg.type == 'note_on':
             self.keys[msg.note % 12].pressed = (msg.velocity > 0)
-            note = Note().from_int(msg.note - 20)
+            note = Note().from_int(msg.note)
             note.channel, note.velocity = PLAYER_CHANNEL, msg.velocity
             noteThread = KeyboardThread(note)
             self.events[msg.note] = noteThread.event
