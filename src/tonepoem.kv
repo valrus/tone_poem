@@ -103,56 +103,51 @@
 
 
 <MidiKeyboard>:
-    keybox: box
-
-    RelativeLayout:
-        id: box
-
-        WhiteKey:
-            id: C
-            index: 0
-            pos_hint: {'x': white_key_w * 0}
-        WhiteKey:
-            id: D
-            index: 2
-            pos_hint: {'x': white_key_w * 1}
-        WhiteKey:
-            id: E
-            index: 4
-            pos_hint: {'x': white_key_w * 2}
-        WhiteKey:
-            id: F
-            index: 5
-            pos_hint: {'x': white_key_w * 3}
-        WhiteKey:
-            id: G
-            index: 7
-            pos_hint: {'x': white_key_w * 4}
-        WhiteKey:
-            id: A
-            index: 9
-            pos_hint: {'x': white_key_w * 5}
-        WhiteKey:
-            id: B
-            index: 11
-            pos_hint: {'x': white_key_w * 6}
-        BlackKey:
-            id: Db
-            index: 1
-            pos_hint: {'x': (white_key_w * 1) - (black_key_w / 2.0), 'top': 1}
-        BlackKey:
-            id: Eb
-            index: 3
-            pos_hint: {'x': (white_key_w * 2) - (black_key_w / 2.0), 'top': 1}
-        BlackKey:
-            id: Gb
-            index: 6
-            pos_hint: {'x': (white_key_w * 4) - (black_key_w / 2.0), 'top': 1}
-        BlackKey:
-            id: Ab
-            index: 8
-            pos_hint: {'x': (white_key_w * 5) - (black_key_w / 2.0), 'top': 1}
-        BlackKey:
-            id: Bb
-            index: 10
-            pos_hint: {'x': (white_key_w * 6) - (black_key_w / 2.0), 'top': 1}
+    WhiteKey:
+        id: C
+        index: 0
+        pos_hint: {'x': white_key_w * 0}
+    WhiteKey:
+        id: D
+        index: 2
+        pos_hint: {'x': white_key_w * 1}
+    WhiteKey:
+        id: E
+        index: 4
+        pos_hint: {'x': white_key_w * 2}
+    WhiteKey:
+        id: F
+        index: 5
+        pos_hint: {'x': white_key_w * 3}
+    WhiteKey:
+        id: G
+        index: 7
+        pos_hint: {'x': white_key_w * 4}
+    WhiteKey:
+        id: A
+        index: 9
+        pos_hint: {'x': white_key_w * 5}
+    WhiteKey:
+        id: B
+        index: 11
+        pos_hint: {'x': white_key_w * 6}
+    BlackKey:
+        id: Db
+        index: 1
+        pos_hint: {'x': (white_key_w * 1) - (black_key_w / 2.0), 'top': 1}
+    BlackKey:
+        id: Eb
+        index: 3
+        pos_hint: {'x': (white_key_w * 2) - (black_key_w / 2.0), 'top': 1}
+    BlackKey:
+        id: Gb
+        index: 6
+        pos_hint: {'x': (white_key_w * 4) - (black_key_w / 2.0), 'top': 1}
+    BlackKey:
+        id: Ab
+        index: 8
+        pos_hint: {'x': (white_key_w * 5) - (black_key_w / 2.0), 'top': 1}
+    BlackKey:
+        id: Bb
+        index: 10
+        pos_hint: {'x': (white_key_w * 6) - (black_key_w / 2.0), 'top': 1}
