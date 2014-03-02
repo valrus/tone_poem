@@ -100,10 +100,29 @@ class IntervalAttack(BeastieAttack):
 class Beastie(Creature):
     is_attacking = BooleanProperty(False)
 
-    def __init__(self, party, name, atlasPath):
-        super(Beastie, self).__init__(name, atlasPath)
+    def __init__(self, party, name):
+        super(Beastie, self).__init__(name, self.__class__.sprite)
         self.register_event_type('on_midi')
         self.party = party
+
+    def on_attack(self, index, *args):
+        self.attack.play(index)
+        self.is_attacking = True
+
+    def on_midi(self, msg):
+        if self.is_attacking:
+            result = self.attack.handleNote(msg)
+            if result is not None:
+                self.is_attacking = False
+                self.attack.finish()
+                print(result)
+
+
+class LandEel(Beastie):
+    sprite = 'sprites/landeel'
+
+    def __init__(self, party, name):
+        super(LandEel, self).__init__(party, name)
         self.anim = BeastieAnimation(
             beat=2, duration=1,
             kws=({'color': [1, 0, 0, 1]}, {'color': [1, 1, 1, 1]}),
@@ -118,10 +137,22 @@ class Beastie(Creature):
             instr=MIDI_INSTRS['Drawbar Organ'],
         )
 
-    def on_attack(self, index, *args):
-        self.attack.play(index)
-        self.is_attacking = True
 
-    def on_midi(self, msg):
-        if self.is_attacking:
-            self.attack.handleNote(msg)
+class PinkElephant(Beastie):
+    sprite = 'sprites/pinkelephant'
+
+    def __init__(self, party, name):
+        super(PinkElephant, self).__init__(party, name)
+        self.anim = BeastieAnimation(
+            beat=1, duration=2, repeat=1,
+            kws=({'color': [1, 0, 0, 1]}, {'color': [1, 1, 1, 1]}),
+            sounds=(
+                MidiPercussion.LowTom1,
+                None
+            )
+        )
+        self.attack = IntervalAttack(
+            start_notes=[Note(n, 2) for n in NOTE_NAMES],
+            note_placement=[(3, 1), (4, 1)],
+            instr=MIDI_INSTRS['Tuba']
+        )

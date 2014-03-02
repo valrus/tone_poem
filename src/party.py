@@ -1,6 +1,6 @@
 from kivy.event import EventDispatcher
 
-from beastie import Beastie
+from beastie import *
 from creature import PlayerCharacter
 
 
@@ -21,10 +21,7 @@ class PlayerParty(Party):
 class BeastieParty(Party):
     def __init__(self):
         self.members = [
-            Beastie(self, 'Timothy',
-                    'sprites/landeel'),
-            Beastie(self, 'Albert',
-                    'sprites/pinkelephant'),
-            Beastie(self, 'Nathan',
-                    'sprites/landeel')
+            LandEel(self, 'Timothy'),
+            PinkElephant(self, 'Albert'),
+            LandEel(self, 'Nathan')
         ]
