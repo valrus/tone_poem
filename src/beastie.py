@@ -10,7 +10,7 @@ from mingus.containers.NoteContainer import NoteContainer
 
 from creature import Creature
 from mingushelpers import MidiPercussion, thread_NoteContainer
-from mingushelpers import isNoteOn, isNoteOff
+from mingushelpers import is_note_on, is_note_off, notes_match
 from mingushelpers import ALL_INTERVALS, MIDI_INSTRS, BEASTIE_CHANNEL
 from mingushelpers import NOTE_NAMES
 
@@ -51,9 +51,9 @@ class NoteCollector(object):
         self.received_notes = NoteContainer()
 
     def hear(self, msg):
-        if isNoteOn(msg):
+        if is_note_on(msg):
             self.pending_notes[msg.note] = Note().from_int(msg.note)
-        elif isNoteOff(msg) and msg.note in self.pending_notes:
+        elif is_note_off(msg) and msg.note in self.pending_notes:
             self.received_notes.add_notes(self.pending_notes.pop(msg.note))
 
     def heard_count(self):

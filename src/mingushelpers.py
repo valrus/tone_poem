@@ -38,7 +38,7 @@ def is_note_on(msg):
 
 
 # TODO: Unit testable
-def isNoteOff(msg):
+def is_note_off(msg):
     return msg.type == 'note_off' or (msg.type == 'note_on'
                                       and msg.velocity == 0)
 

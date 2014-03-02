@@ -10,7 +10,7 @@ from kivy.uix.widget import Widget
 import mido
 from mingus.containers.Note import Note
 from mingus.midi import fluidsynth
-from mingushelpers import PLAYER_CHANNEL
+from mingushelpers import is_note_on, is_note_off, PLAYER_CHANNEL
 
 
 class MidiInputDispatcher(EventDispatcher):
@@ -80,14 +80,15 @@ class MidiKeyboard(RelativeLayout):
         self.midi_in.open_port(list_adapter.selection[0].text)
 
     def on_midi(self, msg):
-        if msg.type == 'note_on':
-            self.keys[msg.note % 12].pressed = (msg.velocity > 0)
+        if is_note_on(msg):
+            print("on", msg.note)
+            self.keys[msg.note % 12].pressed = True
             note = Note().from_int(msg.note)
             note.channel, note.velocity = PLAYER_CHANNEL, msg.velocity
             noteThread = KeyboardThread(note)
             self.events[msg.note] = noteThread.event
             noteThread.start()
-        elif msg.type == 'note_off':
+        elif is_note_off(msg):
             self.keys[msg.note % 12].pressed = False
             self.events[msg.note].set()
         for watcher in self.watchers:
