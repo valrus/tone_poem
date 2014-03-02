@@ -10,9 +10,9 @@ from mingus.midi import fluidsynth
 
 NOTE_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 
-MAJOR_SCALE_INTERVALS = set([str(i) for i in range(1, 8)])
-MINOR_SCALE_INTERVALS = set(["1", "b2", "b3", "4", "5", "b6", "b7"])
-ALL_INTERVALS = (MINOR_SCALE_INTERVALS | MAJOR_SCALE_INTERVALS | set(["b5"]))
+MAJOR_SCALE_INTERVALS = set([str(i) for i in range(2, 8)])
+MINOR_SCALE_INTERVALS = set(["b2", "b3", "4", "5", "b6", "b7"])
+ALL_INTERVALS = MINOR_SCALE_INTERVALS | MAJOR_SCALE_INTERVALS | set(["b5"])
 
 # Playing things
 
