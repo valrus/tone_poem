@@ -94,7 +94,9 @@ class IntervalAttack(BeastieAttack):
     def handleNote(self, msg):
         self.ear.hear(msg)
         if self.ear.heard_count() >= 2:
-            print(self.ear.retrieve())
+            heard = self.ear.retrieve()
+            return notes_match(heard, NoteContainer(self.notes))
+        return None
 
 
 class Beastie(Creature):
