@@ -100,6 +100,12 @@ class IntervalAttack(BeastieAttack):
             return notes_match(heard, NoteContainer(self.notes))
         return None
 
+    def finish(self):
+        """Start listening again, discarding any old data."""
+        self.ear = NoteCollector()
+        self.notes = None
+        self.hl = None
+
 
 class Beastie(Creature):
     is_attacking = BooleanProperty(False)
