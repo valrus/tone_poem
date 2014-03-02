@@ -34,10 +34,12 @@ class BeastieAnimation(object):
         steps = [Animation(duration=stepDuration, **kw)
                  for kw in self.kws * self.repeat]
         for i, s in enumerate(steps):
-            s.bind(on_start=partial(thread_NoteContainer,
-                                    self.sounds[i % len(self.kws)],
-                                    stepDuration,
-                                    None))
+            sound_this_step = self.sounds[i % len(self.kws)]
+            if sound_this_step:
+                s.bind(on_start=partial(thread_NoteContainer,
+                                        self.sounds[i % len(self.kws)],
+                                        stepDuration,
+                                        None))
         return sum(steps[1:], steps[0])
 
 
