@@ -57,7 +57,7 @@ class NoteCollector(object):
             self.received_notes.add_notes(self.pending_notes.pop(msg.note))
 
     def heard_count(self):
-        return len(self.received_notes)
+        return len(self.received_notes) if self.received_notes else 0
 
     def retrieve(self):
         returnVal = self.received_notes
