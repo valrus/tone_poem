@@ -58,11 +58,20 @@ class KeyboardKey(Widget):
 
 
 class BlackKey(KeyboardKey):
-    rgb = ListProperty([0.2, 0.2, 0.2])
+    default_rgb = [0.2, 0.2, 0.2]
+    rgb = ListProperty(default_rgb)
 
 
 class WhiteKey(KeyboardKey):
-    rgb = ListProperty([1.0, 1.0, 1.0])
+    default_rgb = [1.0, 1.0, 1.0]
+    rgb = ListProperty(default_rgb)
+
+
+class KeyAnnotation(object):
+    def __init__(self, attr, normal, special):
+        self.attr = attr
+        self.normal = normal
+        self.special = special
 
 
 class MidiKeyboard(RelativeLayout):
@@ -73,8 +82,19 @@ class MidiKeyboard(RelativeLayout):
         self.register_event_type('on_midi')
         self.keys = [None] * 12
         self.events = {}
+        self.annotations = {}
         self.watchers = set()
         super(MidiKeyboard, self).__init__(**kw)
+
+    def annotate(self, key_index, attr, value):
+        self.annotations[key_index] = KeyAnnotation(
+            attr, getattr(self.keys[key_index], attr), value
+        )
+        setattr(self.keys[key_index], attr, value)
+
+    def clear_annotations(self):
+        for key_index, annotation in self.annotations.iteritems():
+            setattr(self.keys[key_index], annotation.attr, annotation.normal)
 
     def midi_port_changed(self, list_adapter, *args):
         self.midi_in.open_port(list_adapter.selection[0].text)

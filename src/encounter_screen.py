@@ -1,4 +1,5 @@
 import os
+from random import choice
 from functools import partial
 from itertools import chain
 from threading import Thread
@@ -49,38 +50,32 @@ class EncounterScreen(Screen):
 
         self.player_widgets = []
         for pc in self.party.members:
-            self.player_widgets.append(
-                CreatureWidget(pc)
-            )
-            self.ids.player_area.add_widget(
-                self.player_widgets[-1]
-            )
+            self.player_widgets.append(CreatureWidget(pc))
+            self.ids.player_area.add_widget(self.player_widgets[-1])
 
-        self.creature_widgets = []
+        self.beastie_widgets = []
         for b, y_loc in zip(self.beasties.members, y_iterator()):
-            self.creature_widgets.append(
-                CreatureWidget(b)
-            )
-            self.ids.beastie_area.add_widget(
-                self.creature_widgets[-1]
-            )
+            self.beastie_widgets.append(CreatureWidget(b))
+            self.ids.beastie_area.add_widget(self.beastie_widgets[-1])
             b.bind(is_attacking=self.on_beastie_attack)
             self.ids.kb.watchers.add(b)
 
         self.music_player.watchers.add(self)
         self.register_event_type('on_bar')
 
+    def next_on_deck(self):
+        self.on_deck = choice(self.beastie_widgets)
+
     def on_enter(self):
         self.beat_length = self.music_player.beat_length
         self.music_player.play()
-        # This line is for testing!
-        self.on_deck = self.creature_widgets[0]
+        self.next_on_deck()
 
     def on_pre_leave(self):
         self.music_player.stop()
 
     def on_beat_length(self, *args):
-        for w in chain(self.player_widgets, self.creature_widgets):
+        for w in chain(self.player_widgets, self.beastie_widgets):
             w.beat_length = self.beat_length
 
     def on_bar(self, *args):
@@ -96,9 +91,13 @@ class EncounterScreen(Screen):
                     self.beat_length * (t - 1)
                 )
 
-    def on_beastie_attack(self, beastie, *args):
+    def on_beastie_attack(self, beastie, is_attacking):
         note_highlight = beastie.attack.hl
-        if note_highlight:
-            keyIndex = note_to_int(note_highlight.name)
-            self.ids.kb.keys[keyIndex].rgb = [1., 0.5, 0.5]
-        self.on_deck = None
+        if is_attacking:
+            if note_highlight:
+                key_index = note_to_int(note_highlight.name)
+                self.ids.kb.annotate(key_index, "rgb", [1., 0.5, 0.5])
+            self.on_deck = None
+        else:
+            self.ids.kb.clear_annotations()
+            self.next_on_deck()
