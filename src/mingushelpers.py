@@ -26,7 +26,14 @@ MIDI_INSTRS = {name: num for num, name in enumerate(MidiInstrument.names)}
 
 
 # TODO: Unit testable
-def isNoteOn(msg):
+def notes_match(nc1, nc2):
+    """Return whether two NoteContainers' notes match, modulo octaves."""
+    return len(nc1) == len(nc2) and all(int(n1) % 12 == int(n2) % 12
+                                        for n1, n2 in zip(nc1, nc2))
+
+
+# TODO: Unit testable
+def is_note_on(msg):
     return msg.type == 'note_on' and msg.velocity > 0
 
 
