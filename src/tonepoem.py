@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import kivy
 kivy.require('1.1.2')
 

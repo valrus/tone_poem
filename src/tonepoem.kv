@@ -1,9 +1,21 @@
 #:kivy 1.1.0
 
 <CreatureWidget>:
+    happy_label: happiness
+
     Image:
         id: sprite
         source: root.image_source
+        size_hint: None, None
+
+        Label:
+            id: happiness
+            font_name: 'fonts/DejaVuSans.ttf'
+            text: 'Some text'
+            halign: 'left'
+            valign: 'bottom'
+            pos: self.parent.pos
+            text_size: self.parent.size
 
 
 <EncounterScreen>:
@@ -34,8 +46,6 @@
 
             MidiKeyboard:
                 id: kb
-                anchor_x: 'left'
-                anchor_y: 'center'
                 size_hint: 1.0, 1.0
 
         BoxLayout:
@@ -59,8 +69,6 @@
 
             MidiKeyboard:
                 id: kb
-                anchor_x: 'center'
-                anchor_y: 'center'
                 size_hint: 0.9, 0.9
 
 

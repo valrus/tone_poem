@@ -2,7 +2,7 @@ from functools import partial
 from random import choice
 
 from kivy.animation import Animation
-from kivy.properties import BooleanProperty
+from kivy.properties import BooleanProperty, NumericProperty
 
 import mingus.core.notes as notes
 from mingus.containers.Note import Note
@@ -125,11 +125,15 @@ class Beastie(Creature):
             if result is not None:
                 self.is_attacking = False
                 self.attack.finish()
-                print(result)
+                if result:
+                    self.get_happy()
+                else:
+                    self.get_mad()
 
 
 class LandEel(Beastie):
     sprite = 'sprites/landeel'
+    base_happiness = 2
 
     def __init__(self, party, name):
         super(LandEel, self).__init__(party, name)
@@ -150,6 +154,7 @@ class LandEel(Beastie):
 
 class PinkElephant(Beastie):
     sprite = 'sprites/pinkelephant'
+    base_happiness = 3
 
     def __init__(self, party, name):
         super(PinkElephant, self).__init__(party, name)
@@ -162,7 +167,7 @@ class PinkElephant(Beastie):
             )
         )
         self.attack = IntervalAttack(
-            start_notes=[Note(n, 2) for n in NOTE_NAMES],
-            note_placement=[(3, 1), (4, 1)],
+            start_notes=[Note(n, 1) for n in NOTE_NAMES],
+            note_placement=[(3, 0.5), (4, 0.5)],
             instr=MIDI_INSTRS['Tuba']
         )
