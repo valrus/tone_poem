@@ -80,7 +80,7 @@ class EncounterScreen(Screen):
 
     def on_enter(self):
         self.beat_length = self.music_player.beat_length
-        self.music_player.start()
+        self.music_player.play()
         self.next_on_deck()
 
     def on_pre_leave(self):
