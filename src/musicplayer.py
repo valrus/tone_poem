@@ -22,6 +22,7 @@ class MusicPlayer(EventDispatcher):
         self.music_length = self.file_player.length_with_full_measure()
 
         self.register_event_type('on_bar')
+        self.file_player.bind(done=self.start)
         super(MusicPlayer, self).__init__(**kw)
 
     def _set_up_metronome(self):
@@ -41,12 +42,12 @@ class MusicPlayer(EventDispatcher):
     def on_bar(self, *args):
         pass
 
-    def start(self):
-        print(self.music_length)
-        Clock.schedule_once(self.file_player.play)
-        Clock.schedule_interval(self.file_player.play, self.music_length)
-        Clock.schedule_once(self.play_bar)
-        Clock.schedule_interval(self.play_bar, self.file_player.bar_length)
+    def start(self, *args):
+        if args and args[1]:
+            print(self.music_length)
+            Clock.schedule_once(self.file_player.play)
+            Clock.schedule_once(self.play_bar)
+            Clock.schedule_interval(self.play_bar, self.file_player.bar_length)
 
     def stop(self):
         self.file_player.stop()
