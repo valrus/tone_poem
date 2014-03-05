@@ -19,10 +19,10 @@ class MusicPlayer(EventDispatcher):
         self.watchers = set()
         self.file_player = MidiFilePlayer('midi/simplebeat.mid')
         self.beat_length = self.file_player.beat_length
-        self.music_length = self.file_player.length_with_full_measure()
 
         self.register_event_type('on_bar')
-        self.file_player.bind(done=self.start)
+        # Can add a flag for repeating
+        self.file_player.bind(playing=self.schedule_music)
         super(MusicPlayer, self).__init__(**kw)
 
     def _set_up_metronome(self):
@@ -42,12 +42,14 @@ class MusicPlayer(EventDispatcher):
     def on_bar(self, *args):
         pass
 
-    def start(self, *args):
-        if args and args[1]:
-            print(self.music_length)
+    def start(self):
+        self.schedule_music(None, False)
+        Clock.schedule_once(self.play_bar)
+        Clock.schedule_interval(self.play_bar, self.file_player.bar_length)
+
+    def schedule_music(self, inst, alreadyPlaying):
+        if not alreadyPlaying:
             Clock.schedule_once(self.file_player.play)
-            Clock.schedule_once(self.play_bar)
-            Clock.schedule_interval(self.play_bar, self.file_player.bar_length)
 
     def stop(self):
         self.file_player.stop()

@@ -67,7 +67,7 @@ def float_almost_equal(f1, f2):
 
 
 class MidiFilePlayer(EventDispatcher):
-    done = BooleanProperty(True)
+    playing = BooleanProperty(False)
 
     def __init__(self, fileName):
         self.mf = MidiFile(fileName)
@@ -80,12 +80,18 @@ class MidiFilePlayer(EventDispatcher):
                 elif msg.type == 'time_signature':
                     self.time_signature = (msg.numerator, msg.denominator)
 
-        self.messages = None
+        self.seconds_per_tick = self.mf._compute_tick_time(self.tempo)
+        self.messages = self.mf._merge_tracks(self.mf.tracks)
+        self.msg_queue = deque(self.messages)
         self.msg_buffer = deque()
         self.now = 0
         self.register_event_type('on_next_msgs')
 
-        self.beat_length, self.bar_length = self._calculate_lengths()
+        (
+            self.beats_per_measure,
+            self.beat_length,
+            self.bar_length
+        ) = self._calculate_lengths()
 
     def _calculate_lengths(self):
         """Calculate and return the length of beats and bars in this file.
@@ -101,7 +107,7 @@ class MidiFilePlayer(EventDispatcher):
         beat_length = float(Fraction(60, midi_tempo_to_bpm(self.tempo)))
         num_beats, beat_unit = self.time_signature
         beats_per_measure = Fraction(num_beats, 1 if num_beats % 3 else 3)
-        return beat_length, beats_per_measure * beat_length
+        return beats_per_measure, beat_length, beats_per_measure * beat_length
 
     def _synth_msg(self, msg, *args):
         self.now = msg.time
@@ -124,38 +130,33 @@ class MidiFilePlayer(EventDispatcher):
         self.on_next_msgs()
 
     def _schedule_buffer(self):
-        print("Time: {}".format(self.now))
-        print("Scheduling msgs in {} ticks".format(self.delta))
         Clock.schedule_once(self._synth_buffer,
                             self.delta * self.seconds_per_tick)
-        self.now += self.delta
 
     def on_next_msgs(self):
-        self.msg_buffer.append(self.messages.popleft())
-        self.delta = self.msg_buffer[0].time - self.now
-        while self.messages[0].time - self.now == self.delta:
-            self.msg_buffer.append(self.messages.popleft())
-        self._schedule_buffer()
+        if self.msg_queue:
+            self.msg_buffer.append(self.msg_queue.popleft())
+            self.delta = self.msg_buffer[0].time - self.now
+            while (self.msg_queue
+                   and self.msg_queue[0].time - self.now == self.delta):
+                self.msg_buffer.append(self.msg_queue.popleft())
+            self._schedule_buffer()
+        else:
+            ticks_per_measure = (self.mf.ticks_per_beat
+                                 * self.beats_per_measure)
+            measure_round_up = ticks_per_measure - (self.now
+                                                    % ticks_per_measure)
+            Clock.schedule_once(self.stop,
+                                measure_round_up * self.seconds_per_tick)
 
     def play(self, *args):
-        self.done = False
-        print(self.tempo)
-        self.seconds_per_tick = self.mf._compute_tick_time(self.tempo)
-        print(self.seconds_per_tick)
-        self.messages = deque(self.mf._merge_tracks(self.mf.tracks))
-
+        self.playing = True
         # Schedule all the messages that play immediately
-        while self.messages[0].time == 0:
-            self.msg_buffer.append(self.messages.popleft())
+        while self.msg_queue[0].time == 0:
+            self.msg_buffer.append(self.msg_queue.popleft())
         self._synth_buffer()
 
     def stop(self, *args):
         self.playing = False
-
-    def length_with_full_measure(self):
-        """Return this file's length, rounded up to a full measure."""
-        if float_almost_equal(self.mf.length / self.bar_length, 0.0):
-            # No need to round up
-            return self.mf.length
-        else:
-            return ((self.mf.length // self.bar_length) + 1) * self.bar_length
+        self.now = 0
+        self.msg_queue = deque(self.messages)
