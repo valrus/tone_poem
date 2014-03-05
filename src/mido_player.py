@@ -1,6 +1,5 @@
 from collections import deque
 from fractions import Fraction
-from functools import partial
 
 from kivy.clock import Clock
 from kivy.event import EventDispatcher

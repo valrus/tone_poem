@@ -1,6 +1,4 @@
 from kivy.adapters.dictadapter import DictAdapter
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.listview import ListItemButton, ListView
 from kivy.uix.screenmanager import Screen
 

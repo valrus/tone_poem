@@ -1,11 +1,7 @@
-from fractions import Fraction
-from threading import Thread
-
 from kivy.clock import Clock
 from kivy.event import EventDispatcher
 
 import mingus.core.value as value
-from mingus.midi import fluidsynth
 from mingus.containers.Bar import Bar
 from mingus.containers.Track import Track
 

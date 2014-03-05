@@ -5,7 +5,6 @@ from itertools import chain
 from threading import Thread
 
 from kivy.clock import Clock
-from kivy.graphics import Color
 from kivy.properties import StringProperty, ObjectProperty, NumericProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import Screen
