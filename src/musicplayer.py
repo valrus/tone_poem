@@ -23,6 +23,7 @@ class MusicPlayer(EventDispatcher):
         self.register_event_type('on_bar')
         # Can add a flag for repeating
         self.file_player.bind(playing=self.schedule_music)
+        self.file_player.bind(bar_number=self.on_bar)
         super(MusicPlayer, self).__init__(**kw)
 
     def _set_up_metronome(self):
@@ -35,20 +36,17 @@ class MusicPlayer(EventDispatcher):
             bar.place_notes(kick, value.quarter)
         return metronome
 
-    def play_bar(self, *args):
-        for watcher in self.watchers:
-            watcher.dispatch('on_bar', *args)
-
-    def on_bar(self, *args):
-        pass
+    def on_bar(self, inst, bar_number):
+        if bar_number:
+            print('bar {}'.format(bar_number))
+            for watcher in self.watchers:
+                watcher.dispatch('on_bar', bar_number)
 
     def start(self):
         self.schedule_music(None, False)
-        Clock.schedule_once(self.play_bar)
-        Clock.schedule_interval(self.play_bar, self.file_player.bar_length)
 
-    def schedule_music(self, inst, alreadyPlaying):
-        if not alreadyPlaying:
+    def schedule_music(self, inst, already_playing):
+        if not already_playing:
             Clock.schedule_once(self.file_player.play)
 
     def stop(self):

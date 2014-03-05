@@ -4,7 +4,7 @@ from functools import partial
 
 from kivy.clock import Clock
 from kivy.event import EventDispatcher
-from kivy.properties import BooleanProperty
+from kivy.properties import BooleanProperty, NumericProperty
 
 from mingus.midi import fluidsynth
 from mido.midifiles import MidiFile, MetaMessage, Message
@@ -68,6 +68,7 @@ def float_almost_equal(f1, f2):
 
 class MidiFilePlayer(EventDispatcher):
     playing = BooleanProperty(False)
+    bar_number = NumericProperty(0)
 
     def __init__(self, fileName):
         self.mf = MidiFile(fileName)
@@ -80,18 +81,20 @@ class MidiFilePlayer(EventDispatcher):
                 elif msg.type == 'time_signature':
                     self.time_signature = (msg.numerator, msg.denominator)
 
-        self.seconds_per_tick = self.mf._compute_tick_time(self.tempo)
         self.messages = self.mf._merge_tracks(self.mf.tracks)
         self.msg_queue = deque(self.messages)
         self.msg_buffer = deque()
         self.now = 0
-        self.register_event_type('on_next_msgs')
+        self.bar_pending = False
 
+        # XXX: All this time handling should go in a class
         (
-            self.beats_per_measure,
+            self.beats_per_bar,
             self.beat_length,
             self.bar_length
         ) = self._calculate_lengths()
+        self.seconds_per_tick = self.mf._compute_tick_time(self.tempo)
+        self.ticks_per_bar = (self.mf.ticks_per_beat * self.beats_per_bar)
 
     def _calculate_lengths(self):
         """Calculate and return the length of beats and bars in this file.
@@ -106,8 +109,8 @@ class MidiFilePlayer(EventDispatcher):
         """
         beat_length = float(Fraction(60, midi_tempo_to_bpm(self.tempo)))
         num_beats, beat_unit = self.time_signature
-        beats_per_measure = Fraction(num_beats, 1 if num_beats % 3 else 3)
-        return beats_per_measure, beat_length, beats_per_measure * beat_length
+        beats_per_bar = Fraction(num_beats, 1 if num_beats % 3 else 3)
+        return beats_per_bar, beat_length, beats_per_bar * beat_length
 
     def _synth_msg(self, msg, *args):
         self.now = msg.time
@@ -127,13 +130,17 @@ class MidiFilePlayer(EventDispatcher):
     def _synth_buffer(self, *args):
         while self.msg_buffer:
             self._synth_msg(self.msg_buffer.popleft())
-        self.on_next_msgs()
+        self.fill_buffer()
 
     def _schedule_buffer(self):
         Clock.schedule_once(self._synth_buffer,
                             self.delta * self.seconds_per_tick)
 
-    def on_next_msgs(self):
+    def _bar_break(self, *args):
+        self.bar_number += 1
+        self.bar_pending = False
+
+    def fill_buffer(self):
         if self.msg_queue:
             self.msg_buffer.append(self.msg_queue.popleft())
             self.delta = self.msg_buffer[0].time - self.now
@@ -141,22 +148,34 @@ class MidiFilePlayer(EventDispatcher):
                    and self.msg_queue[0].time - self.now == self.delta):
                 self.msg_buffer.append(self.msg_queue.popleft())
             self._schedule_buffer()
+            # XXX: Scheduling a bar break will fail if there are no messages
+            # in a bar. To fix this we should look ahead in the queue
+            # and schedule bar until the next message, but I don't feel
+            # like it right now.
+            if (self.now >= self.bar_number * self.ticks_per_bar
+                    and not self.bar_pending):
+                Clock.schedule_once(
+                    self._bar_break,
+                    ((self.bar_number + 1) * self.ticks_per_bar - self.now)
+                    * self.seconds_per_tick
+                )
+                self.bar_pending = True
         else:
-            ticks_per_measure = (self.mf.ticks_per_beat
-                                 * self.beats_per_measure)
-            measure_round_up = ticks_per_measure - (self.now
-                                                    % ticks_per_measure)
-            Clock.schedule_once(self.stop,
-                                measure_round_up * self.seconds_per_tick)
+            # no more messages; schedule a stop at the end of this bar
+            bar_round_up = self.ticks_per_bar - (self.now % self.ticks_per_bar)
+            Clock.schedule_once(self.stop, bar_round_up * self.seconds_per_tick)
 
     def play(self, *args):
         self.playing = True
         # Schedule all the messages that play immediately
         while self.msg_queue[0].time == 0:
             self.msg_buffer.append(self.msg_queue.popleft())
+        Clock.schedule_once(self._bar_break)
         self._synth_buffer()
 
     def stop(self, *args):
         self.playing = False
         self.now = 0
+        self.bar_number = 0
+        self.bar_pending = False
         self.msg_queue = deque(self.messages)
