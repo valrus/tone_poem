@@ -10,6 +10,7 @@ from mingus.containers.Bar import Bar
 from mingus.containers.Track import Track
 
 from mingushelpers import MidiPercussion
+from mido_player import MidiFilePlayer
 
 
 class MusicPlayer(EventDispatcher):
@@ -17,19 +18,13 @@ class MusicPlayer(EventDispatcher):
         self.tempo = 80
         self.metronome = self._set_up_metronome()
         self.watchers = set()
-
-        # When the upper number in the time signature is NOT a multiple of 3,
-        # excepted 3 (binary beat), then the beat is equal to the fraction
-        # represented by the bottom number.
-        # When the upper number is a multiple of 3, excepted 3 (ternary beat),
-        # then the beat is equal to the fraction represented by the bottom
-        # number, multiplied by 3.
-        num_beats, beat_unit = self.metronome[0].meter
-        beats_per_measure = Fraction(num_beats, 1 if num_beats % 3 else 3)
-        self.beat_length = float(Fraction(60, self.tempo))
-        self.bar_interval = beats_per_measure * self.beat_length
+        self.file_player = MidiFilePlayer('midi/simplebeat.mid')
+        self.beat_length = self.file_player.beat_length
 
         self.register_event_type('on_bar')
+        # Can add a flag for repeating
+        self.file_player.bind(playing=self.schedule_music)
+        self.file_player.bind(bar_number=self.on_bar)
         super(MusicPlayer, self).__init__(**kw)
 
     def _set_up_metronome(self):
@@ -42,21 +37,18 @@ class MusicPlayer(EventDispatcher):
             bar.place_notes(kick, value.quarter)
         return metronome
 
-    def play_bar(self, *args):
-        for watcher in self.watchers:
-            watcher.dispatch('on_bar', *args)
-        t = Thread(
-            target=fluidsynth.play_Track,
-            args=(self.metronome, 1, self.tempo)
-        )
-        t.start()
+    def on_bar(self, inst, bar_number):
+        if bar_number:
+            print('bar {}'.format(bar_number))
+            for watcher in self.watchers:
+                watcher.dispatch('on_bar', bar_number)
 
-    def on_bar(self, *args):
-        pass
+    def start(self):
+        self.schedule_music(None, False)
 
-    def play(self):
-        Clock.schedule_once(self.play_bar)
-        Clock.schedule_interval(self.play_bar, self.bar_interval)
+    def schedule_music(self, inst, already_playing):
+        if not already_playing:
+            Clock.schedule_once(self.file_player.play)
 
     def stop(self):
         # Unfortunately, this throws a bunch of assertions and does nothing.

@@ -92,14 +92,15 @@ class EncounterScreen(Screen):
 
     def on_bar(self, *args):
         if self.on_deck:
+            attacker, self.on_deck = self.on_deck, None
             Clock.schedule_once(
-                self.on_deck.flash,
-                self.beat_length * (self.on_deck.creature.anim.beat - 1)
+                attacker.flash,
+                self.beat_length * (attacker.creature.anim.beat - 1)
             )
-            for index, t in enumerate(self.on_deck.creature.attack.
-                                      schedule_times()):
+            for index, t in enumerate(attacker.creature.attack
+                                      .schedule_times()):
                 Clock.schedule_once(
-                    partial(self.on_deck.creature.on_attack, index),
+                    partial(attacker.creature.on_attack, index),
                     self.beat_length * (t - 1)
                 )
 
@@ -109,7 +110,6 @@ class EncounterScreen(Screen):
             if note_highlight:
                 key_index = note_to_int(note_highlight.name)
                 self.ids.kb.annotate(key_index, "rgb", [1., 0.5, 0.5])
-            self.on_deck = None
         else:
             self.ids.kb.clear_annotations()
             self.next_on_deck()
