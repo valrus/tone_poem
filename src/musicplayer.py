@@ -6,7 +6,7 @@ from mingus.containers.Bar import Bar
 from mingus.containers.Track import Track
 
 from mingushelpers import MidiPercussion
-from mido_player import MidiFilePlayer
+from mido_player import MidiFilePlayer, PlayStatus
 
 
 class MusicPlayer(EventDispatcher):
@@ -14,12 +14,12 @@ class MusicPlayer(EventDispatcher):
         self.tempo = 80
         self.metronome = self._set_up_metronome()
         self.watchers = set()
-        self.file_player = MidiFilePlayer('midi/simplebeat.mid')
+        self.file_player = MidiFilePlayer(midiFile)
         self.beat_length = self.file_player.beat_length
 
         self.register_event_type('on_bar')
         # Can add a flag for repeating
-        self.file_player.bind(playing=self.schedule_music)
+        self.file_player.bind(status=self.schedule_music)
         self.file_player.bind(bar_number=self.on_bar)
         super(MusicPlayer, self).__init__(**kw)
 
@@ -40,13 +40,12 @@ class MusicPlayer(EventDispatcher):
                 watcher.dispatch('on_bar', bar_number)
 
     def start(self):
-        self.schedule_music(None, False)
+        self.schedule_music(None, PlayStatus.Start)
 
-    def schedule_music(self, inst, already_playing):
-        if not already_playing:
+    def schedule_music(self, inst, status):
+        if status == PlayStatus.Start:
             Clock.schedule_once(self.file_player.play)
 
     def stop(self):
         # Unfortunately, this throws a bunch of assertions and does nothing.
-        # fluidsynth.stop_everything()
-        Clock.unschedule(self.play_bar)
+        self.file_player.stop()

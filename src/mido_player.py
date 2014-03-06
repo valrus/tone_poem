@@ -1,15 +1,21 @@
+from __future__ import division
+
 from collections import deque
 from fractions import Fraction
 
 from kivy.clock import Clock
 from kivy.event import EventDispatcher
-from kivy.properties import BooleanProperty, NumericProperty
+from kivy.properties import NumericProperty
 
 from mingus.midi import fluidsynth
 from mido.midifiles import MidiFile, MetaMessage, Message
 
 SYNTH = fluidsynth.midi.fs
 DEFAULT_TEMPO = 500000
+
+
+class PlayStatus(object):
+    Stopped, Playing, Start = range(3)
 
 
 def midi_tempo_to_bpm(tempo):
@@ -66,7 +72,7 @@ def float_almost_equal(f1, f2):
 
 
 class MidiFilePlayer(EventDispatcher):
-    playing = BooleanProperty(False)
+    status = NumericProperty(PlayStatus.Start)
     bar_number = NumericProperty(0)
 
     def __init__(self, fileName):
@@ -76,6 +82,7 @@ class MidiFilePlayer(EventDispatcher):
         for i, track in enumerate(self.mf.tracks):
             for msg in [m for m in track if isinstance(m, MetaMessage)]:
                 if msg.type == 'set_tempo':
+                    print(msg.tempo)
                     self.tempo = msg.tempo
                 elif msg.type == 'time_signature':
                     self.time_signature = (msg.numerator, msg.denominator)
@@ -85,6 +92,8 @@ class MidiFilePlayer(EventDispatcher):
         self.msg_buffer = deque()
         self.now = 0
         self.bar_pending = False
+        self.loop = True
+        self.notes_on = set()
 
         # XXX: All this time handling should go in a class
         (
@@ -106,7 +115,7 @@ class MidiFilePlayer(EventDispatcher):
         then the beat is equal to the fraction represented by the bottom
         number, multiplied by 3.
         """
-        beat_length = float(Fraction(60, midi_tempo_to_bpm(self.tempo)))
+        beat_length = 60 / midi_tempo_to_bpm(self.tempo)
         num_beats, beat_unit = self.time_signature
         beats_per_bar = Fraction(num_beats, 1 if num_beats % 3 else 3)
         return beats_per_bar, beat_length, beats_per_bar * beat_length
@@ -115,8 +124,10 @@ class MidiFilePlayer(EventDispatcher):
         self.now = msg.time
         if msg.type == 'note_on':
             SYNTH.noteon(msg.channel, msg.note, msg.velocity)
+            self.notes_on.add((msg.note, msg.channel))
         elif msg.type == 'note_off':
             SYNTH.noteoff(msg.channel, msg.note)
+            self.notes_on.remove((msg.note, msg.channel))
         elif msg.type == 'pitchwheel':
             SYNTH.pitch_bend(msg.channel, msg.pitch)
         elif msg.type == 'control_change':
@@ -159,22 +170,40 @@ class MidiFilePlayer(EventDispatcher):
                     * self.seconds_per_tick
                 )
                 self.bar_pending = True
-        else:
+        elif self.status != PlayStatus.Stopped:
             # no more messages; schedule a stop at the end of this bar
             bar_round_up = self.ticks_per_bar - (self.now % self.ticks_per_bar)
-            Clock.schedule_once(self.stop, bar_round_up * self.seconds_per_tick)
+            Clock.schedule_once(self.done, bar_round_up * self.seconds_per_tick)
 
     def play(self, *args):
-        self.playing = True
+        self.status = PlayStatus.Playing
+        if not self.msg_queue:
+            self.msg_queue = deque(self.messages)
         # Schedule all the messages that play immediately
         while self.msg_queue[0].time == 0:
             self.msg_buffer.append(self.msg_queue.popleft())
         Clock.schedule_once(self._bar_break)
         self._synth_buffer()
 
-    def stop(self, *args):
-        self.playing = False
-        self.now = 0
-        self.bar_number = 0
-        self.bar_pending = False
+    def done(self, *args):
+        self.status = PlayStatus.Start
+        self.reset()
         self.msg_queue = deque(self.messages)
+
+    def stop(self):
+        self.status = PlayStatus.Stopped
+        Clock.unschedule(self._bar_break)
+        # Fill the queue with messages that stop all notes currently playing.
+        # Put a reset in there for good measure, though it doesn't seem to
+        # actually do anything.
+        self.msg_queue = deque([Message('note_off', note=n, channel=c,
+                                        velocity=0, time=0)
+                                for n, c in self.notes_on])
+        self.msg_queue.append(Message('reset'))
+        Clock.unschedule(self._synth_buffer)
+        self.fill_buffer()
+        self.reset()
+
+    def reset(self):
+        self.now, self.bar_number = 0, 0
+        self.bar_pending = False
