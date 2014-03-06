@@ -11,6 +11,7 @@ import mido
 from mingus.containers.Note import Note
 from mingus.midi import fluidsynth
 from mingushelpers import is_note_on, is_note_off, PLAYER_CHANNEL
+from mingushelpers import InstrumentNames
 
 
 class MidiInputDispatcher(EventDispatcher):
@@ -44,6 +45,8 @@ class KeyboardThread(threading.Thread):
         self.event = threading.Event()
 
     def run(self):
+        fluidsynth.set_instrument(PLAYER_CHANNEL,
+                                  InstrumentNames["Acoustic Grand Piano"])
         fluidsynth.play_Note(self.note)
         self.event.wait()
         fluidsynth.stop_Note(self.note)
