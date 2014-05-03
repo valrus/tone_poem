@@ -30,12 +30,10 @@ class MidiInputDispatcher(EventDispatcher):
             watcher.dispatch('on_midi', *args)
 
     def open_port(self, portName):
-        if not self.port or self.port.name != portName:
-            if self.port:
-                self.port.close()
+        if portName != self.port.name:
+            self.port.close()
             print(portName)
-            if portName in mido.get_input_names():
-                self.port = mido.open_input(portName, callback=self.dispatch_midi)
+            self.port = mido.open_input(portName, callback=self.dispatch_midi)
 
     def on_midi(self, *args):
         pass
