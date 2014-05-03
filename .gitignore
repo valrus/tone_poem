@@ -19,5 +19,9 @@ rtmidi.html
 src/midi
 src/sounds
 src/sprites
+src/mingus
+src/pyfluidsynth3
 .mr.developer.cfg
 expt_*.py
+*.swp
+.#*
