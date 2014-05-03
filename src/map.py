@@ -53,6 +53,8 @@ def _secondneighbors(graph, start):
 
 
 class GraphMap(object):
+    """A map with nodes connected by edges.
+    """
     def __init__(self, margin=60, dims=WINDOW_SIZE):
         self.dims = Size(*dims)
         self.min_distance = sum(dims) / 18
@@ -68,7 +70,7 @@ class GraphMap(object):
         self.graph = nx.Graph()
         self.graph.add_nodes_from(points)
         for triangle in computeDelaunayTriangulation(points):
-            self.graph.add_edges_from(chain(*[
+            self.graph.add_edges_from(chain.from_iterable([
                 [(points[firstIndex], points[secondIndex]),
                  (points[secondIndex], points[firstIndex])]
                 for firstIndex, secondIndex in combinations(triangle, 2)
@@ -76,10 +78,16 @@ class GraphMap(object):
         wall_crossings, self.wall_dict = self.computeWalls()
         self.walls = [cross.wall for cross in wall_crossings]
         self.removeMultiWallEdges()
+
+        # add the wall crossing a given edge as an edge attribute
         self.addCrossings(wall_crossings)
 
-        # can't use edges_iter here since we're modifying it
+        # make a copy of the graph including all edges between adjacent cells
+        self.adjacency = self.graph.copy()
+
+        # remove too-long edges unless doing so would disconnect the graph
         dist_squared = self.min_distance ** 2
+        # can't use edges_iter here since we're modifying it
         for v1, v2, attrs in self.graph.edges(data=True):
             if distance_squared(v1, v2) > 2 * dist_squared:
                 self.graph.remove_edge(v1, v2)
@@ -154,8 +162,13 @@ class GraphMap(object):
 
         return [wall for wall in walls if wall is not None], wall_dict
 
-    def neighbors(self, node):
+    def connected_neighbors(self, node):
+        """Get all neighbors of a node with an edge connecting them."""
         return self.graph.neighbors(node)
+
+    def all_neighbors(self, node):
+        """Get all neighbors of a node even if there's no edge between them."""
+        return self.adjacency.neighbors(node)
 
     def _cleanup_nodes(self, nodeType):
         pass
@@ -176,7 +189,7 @@ class GraphMap(object):
         return self.wall_dict[n]
 
     def wall_between_nodes(self, n1, n2):
-        return self.graph[n1][n2]['wall']
+        return self.adjacency[n1][n2]['wall']
 
     def __getattr__(self, attrname):
         return getattr(self.graph, attrname)

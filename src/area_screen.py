@@ -329,12 +329,13 @@ class MapOverlay(RelativeLayout):
                 # sometimes this adds an edge?
                 widget.edges[edge] = 0.0
                 print(len(widget.edges), widget.edges)
-                anim = Animation(
+                center_anim = Animation(
                     edge_darknesses=list(widget.edges.values()),
                     duration=1.0,
                     transition=AnimationTransition.in_out_quad,
                 )
-                anim.start(widget)
+                center_anim.start(widget)
+
 
 class MapTerrain(RelativeLayout):
     def __init__(self, **kw):
@@ -454,11 +455,12 @@ class AreaScreen(Screen):
 
     def reveal_map_areas(self, loc, *args):
         clear_edges = defaultdict(list)
-        for adjacent_node in self.map.neighbors(loc):
+        for adjacent_node in self.map.all_neighbors(loc):
             if adjacent_node in self.overlay.clear:
                 adjacent_edge = self.map.wall_between_nodes(loc, adjacent_node)
                 clear_edges[adjacent_node].append(adjacent_edge)
                 clear_edges[loc].append(adjacent_edge)
+                self.overlay.reveal(adjacent_node, clear_edges)
         self.overlay.reveal(loc, clear_edges)
 
     def on_midi(self, msg):
@@ -467,7 +469,7 @@ class AreaScreen(Screen):
             return
         heard = self.ear.retrieve()
         print("Heard", heard)
-        for neighbor in self.map.neighbors(self.pc_loc):
+        for neighbor in self.map.connected_neighbors(self.pc_loc):
             if notes_match(heard, self.map.node_label(neighbor).container()):
                 prev_loc = self.pc_loc
                 self.pc_loc = neighbor
