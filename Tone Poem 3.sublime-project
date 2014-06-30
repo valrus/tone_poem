@@ -8,6 +8,6 @@
 	],
 	"settings":
 	{
-		"python_interpreter": "/Users/valrus/.pyenv/kivy/bin/python"
+		"python_interpreter": "/Users/valrus/.pyenv/versions/kivy/bin/python"
 	}
 }
