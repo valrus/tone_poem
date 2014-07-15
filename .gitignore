@@ -21,3 +21,5 @@ src/sounds
 src/sprites
 .mr.developer.cfg
 expt_*.py
+src/mingus
+pygame_test.py

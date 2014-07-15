@@ -1,5 +1,40 @@
 #:kivy 1.1.0
 
+<VertexWidget>:
+    canvas:
+        Color:
+            rgba: 1, 1, 1, 1
+        Ellipse:
+            pos: self.pos
+            size: self.size
+
+
+<AreaScreen>:
+    AnchorLayout:
+        id: area_root
+        anchor_x: 'center'
+        anchor_y: 'center'
+
+        MapLayout:
+            id: map_root
+            ground_overlay: root.ids.ground_overlay
+            walls_overlay: root.ids.map_overlay
+            features_overlay: root.ids.map_features
+            size_hint: 1.0, 1.0
+
+            MapOverlay:
+                id: ground_overlay
+                size_hint: 1.0, 1.0
+
+            MapOverlay:
+                id: map_overlay
+                size_hint: 1.0, 1.0
+
+            MapFeatures:
+                id: map_features
+                size_hint: 1.0, 1.0
+
+
 <CreatureWidget>:
     happy_label: happiness
 
