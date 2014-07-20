@@ -25,6 +25,59 @@ def intersect(s1, s2):
                      0 < (vx * dy1 - vy * dx1) / vp < 1]) else 0
 
 
+def constrain(given_point, bounds, m, rightward=True):
+    x0, y0 = given_point
+    if rightward:
+        # second point is to the right
+        if m > 0:
+            # up and to the right
+            vertical_border_distance = bounds.h - y0
+            if abs(m * (bounds.w - x0)) > vertical_border_distance:
+                # closest border is up
+                dy = vertical_border_distance
+                dx = dy / m if m else 0
+            else:
+                # closest border is right
+                dx = bounds.w - x0
+                dy = dx * m
+        else:
+            # down and to the right
+            vertical_border_distance = y0
+            if abs(m * (bounds.w - x0)) > vertical_border_distance:
+                # closest border is down
+                dy = -vertical_border_distance
+                dx = dy / m if m else 0
+            else:
+                # closest border is right
+                dx = bounds.w - x0
+                dy = dx * m
+    else:
+        # second point is to the left
+        if m < 0:
+            # up and to the left
+            vertical_border_distance = abs(bounds.h - y0)
+            if abs(m * x0) > vertical_border_distance:
+                # closest border is up
+                dy = vertical_border_distance
+                dx = -dy / m if m else 0
+            else:
+                # closest border is left
+                dx = -x0
+                dy = dx * m
+        else:
+            # down and to the left
+            vertical_border_distance = y0
+            if abs(m * x0) > vertical_border_distance:
+                # closest border is down
+                dy = -vertical_border_distance
+                dx = dy / m if m else 0
+            else:
+                # closest border is left
+                dx = -x0
+                dy = dx * m
+    return Coords(x0 + dx, y0 + dy)
+
+
 class GraphMap(object):
     def __init__(self, margin=60, dims=WINDOW_SIZE):
         self.dims = Size(*dims)
@@ -84,67 +137,13 @@ class GraphMap(object):
             # calculate an edge point using slope = -a/b
             a, b, __ = abcs[i]
             m = -a / b if b else 0
-            x0, y0 = verts[v1 if v1 != -1 else v2]
-            if v1 != -1:
-                # second point is to the right
-                x0, y0 = verts[v1]
-                if self.pointOutsideBounds(x0, y0):
-                    continue
-                if m > 0:
-                    # up and to the right
-                    vertical_border_distance = self.dims.h - y0
-                    if abs(m * (self.dims.w - x0)) > vertical_border_distance:
-                        # closest border is up
-                        dy = vertical_border_distance
-                        dx = dy / m if m else 0
-                    else:
-                        # closest border is right
-                        dx = self.dims.w - x0
-                        dy = dx * m
-                else:
-                    # down and to the right
-                    vertical_border_distance = y0
-                    if abs(m * (self.dims.w - x0)) > vertical_border_distance:
-                        # closest border is down
-                        dy = -vertical_border_distance
-                        dx = dy / m if m else 0
-                    else:
-                        # closest border is right
-                        dx = self.dims.w - x0
-                        dy = dx * m
-            else:
-                # second point is to the left
-                x0, y0 = verts[v2]
-                if self.pointOutsideBounds(x0, y0):
-                    continue
-                if m < 0:
-                    # up and to the left
-                    vertical_border_distance = abs(self.dims.h - y0)
-                    if abs(m * x0) > vertical_border_distance:
-                        # closest border is up
-                        dy = vertical_border_distance
-                        dx = -dy / m if m else 0
-                    else:
-                        # closest border is left
-                        dx = -x0
-                        dy = dx * m
-                else:
-                    # down and to the left
-                    vertical_border_distance = y0
-                    if abs(m * x0) > vertical_border_distance:
-                        # closest border is down
-                        dy = -vertical_border_distance
-                        dx = dy / m if m else 0
-                    else:
-                        # closest border is left
-                        dx = -x0
-                        dy = dx * m
-            print("hard:", (x0, y0), (x0 + dx, y0 + dy))
-            x1, y1 = x0 + dx, y0 + dy
-            if any([self.pointOutsideBounds(x, y)
-                    for x, y in [(x0, y0), (x1, y1)]]):
-                print((x0, y0), m)
-            walls.append((Coords(x0, y0), Coords(x1, y1)))
+            p0 = verts[v1 if v1 != -1 else v2]
+            if self.pointOutsideBounds(*p0):
+                continue
+            p1 = constrain(p0, self.dims, -a/b, rightward=(v1 != -1))
+            if any([self.pointOutsideBounds(*p) for p in (p0, p1)]):
+                print(p0, m)
+            walls.append((p0, p1))
         return walls
 
     def __getattr__(self, attrname):
