@@ -6,14 +6,10 @@ from itertools import chain, combinations
 import networkx as nx
 
 from poisson.poisson_disk import sample_poisson_uniform
-from tools import Coords, Size, WINDOW_SIZE
+from tools import Coords, Size, WINDOW_SIZE, distance_squared, sandwich
 from voronoi import computeDelaunayTriangulation, computeVoronoiDiagram
 
-LONG_DISTANCE = 100000
-
-
-def distance_squared(v1, v2):
-    return (v2.x - v1.x) ** 2 + (v2.y - v1.y) ** 2
+LONG_DISTANCE = 300
 
 
 def intersect(s1, s2):
@@ -30,13 +26,14 @@ def intersect(s1, s2):
 
 
 class GraphMap(object):
-    def __init__(self, dims=WINDOW_SIZE):
+    def __init__(self, margin=60, dims=WINDOW_SIZE):
         self.dims = Size(*dims)
-        self.min_distance = sum(dims) / 15
+        self.min_distance = sum(dims) / 18
+        self.margin = margin
         points = [
-            Coords(floor(x), floor(y)) for x, y in
-            sample_poisson_uniform(self.dims.w, self.dims.h,
-                                   # Average divided by 5 seems reasonable
+            Coords(floor(x) + self.margin, floor(y) + self.margin) for x, y in
+            sample_poisson_uniform(self.dims.w - self.margin * 2,
+                                   self.dims.h - self.margin * 2,
                                    self.min_distance,
                                    # Sample points for Poisson, arbitrary
                                    30)
@@ -66,33 +63,88 @@ class GraphMap(object):
                     self.graph.remove_edge(*edge)
                     break
 
+    def pointOutsideBounds(self, x, y):
+        return any([x < 0, x > self.dims.w, y < 0, y > self.dims.h])
+
     def computeWalls(self):
         walls = []
         verts, abcs, edges = computeVoronoiDiagram(self.graph.nodes())
         for i, v1, v2 in edges:
-            if all(v != -1 for v in (v1, v2)):
+            if all(v != -1 and not self.pointOutsideBounds(*verts[v])
+                   for v in (v1, v2)):
                 # edge has a vertex at either end, easy
+                print("easy:", verts[v1], verts[v2])
                 walls.append((Coords(*verts[v1]), Coords(*verts[v2])))
-            else:
-                # apparently v1, v2 go left to right
-                # compute a point "at infinity" by using slope = -a/b
-                a, b, __ = abcs[i]
-                if v1 != -1:
-                    x0, y0 = verts[v1]
-                    # this can trigger divide by 0, account for that!
-                    walls.append((
-                        Coords(x0, y0),
-                        Coords(x0 + (LONG_DISTANCE if b else 0),
-                               y0 - (a * LONG_DISTANCE) / (b or 1))
-                    ))
-                else:
-                    x0, y0 = verts[v2]
-                    walls.append((
-                        Coords(x0 - (LONG_DISTANCE if b else 0),
-                               y0 + (a * LONG_DISTANCE) / (b or 1)),
-                        Coords(x0, y0)
-                    ))
                 continue
+            if self.pointOutsideBounds(*verts[v1]):
+                v1 = -1
+            elif self.pointOutsideBounds(*verts[v2]):
+                v2 = -1
+            # apparently v1, v2 go left to right
+            # calculate an edge point using slope = -a/b
+            a, b, __ = abcs[i]
+            m = -a / b if b else 0
+            x0, y0 = verts[v1 if v1 != -1 else v2]
+            if v1 != -1:
+                # second point is to the right
+                x0, y0 = verts[v1]
+                if self.pointOutsideBounds(x0, y0):
+                    continue
+                if m > 0:
+                    # up and to the right
+                    vertical_border_distance = self.dims.h - y0
+                    if abs(m * (self.dims.w - x0)) > vertical_border_distance:
+                        # closest border is up
+                        dy = vertical_border_distance
+                        dx = dy / m if m else 0
+                    else:
+                        # closest border is right
+                        dx = self.dims.w - x0
+                        dy = dx * m
+                else:
+                    # down and to the right
+                    vertical_border_distance = y0
+                    if abs(m * (self.dims.w - x0)) > vertical_border_distance:
+                        # closest border is down
+                        dy = -vertical_border_distance
+                        dx = dy / m if m else 0
+                    else:
+                        # closest border is right
+                        dx = self.dims.w - x0
+                        dy = dx * m
+            else:
+                # second point is to the left
+                x0, y0 = verts[v2]
+                if self.pointOutsideBounds(x0, y0):
+                    continue
+                if m < 0:
+                    # up and to the left
+                    vertical_border_distance = abs(self.dims.h - y0)
+                    if abs(m * x0) > vertical_border_distance:
+                        # closest border is up
+                        dy = vertical_border_distance
+                        dx = -dy / m if m else 0
+                    else:
+                        # closest border is left
+                        dx = -x0
+                        dy = dx * m
+                else:
+                    # down and to the left
+                    vertical_border_distance = y0
+                    if abs(m * x0) > vertical_border_distance:
+                        # closest border is down
+                        dy = -vertical_border_distance
+                        dx = dy / m if m else 0
+                    else:
+                        # closest border is left
+                        dx = -x0
+                        dy = dx * m
+            print("hard:", (x0, y0), (x0 + dx, y0 + dy))
+            x1, y1 = x0 + dx, y0 + dy
+            if any([self.pointOutsideBounds(x, y)
+                    for x, y in [(x0, y0), (x1, y1)]]):
+                print((x0, y0), m)
+            walls.append((Coords(x0, y0), Coords(x1, y1)))
         return walls
 
     def __getattr__(self, attrname):

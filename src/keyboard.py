@@ -16,7 +16,7 @@ from mingushelpers import InstrumentNames
 
 class MidiInputDispatcher(EventDispatcher):
     def __init__(self, **kw):
-        self.port = mido.open_input()
+        self.port = None
         self.watchers = set()
         self.register_event_type('on_midi')
         super(MidiInputDispatcher, self).__init__(**kw)
@@ -30,9 +30,11 @@ class MidiInputDispatcher(EventDispatcher):
             watcher.dispatch('on_midi', *args)
 
     def open_port(self, portName):
-        self.port.close()
-        print(portName)
-        self.port = mido.open_input(portName, callback=self.dispatch_midi)
+        if not self.port or self.port.name != portName:
+            if self.port:
+                self.port.close()
+            print(portName)
+            self.port = mido.open_input(portName, callback=self.dispatch_midi)
 
     def on_midi(self, *args):
         pass

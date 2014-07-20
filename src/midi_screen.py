@@ -33,7 +33,7 @@ class MidiScreen(Screen):
                                    args_converter=midi_dict_args_converter,
                                    cls=ListItemButton,
                                    selection_mode='single',
-                                   allow_empty_selection=False)
+                                   allow_empty_selection=True)
         self.ids.midi_list_layout.add_widget(ListView(adapter=dict_adapter,
                                                       size_hint=(0.5, 0.8)))
 

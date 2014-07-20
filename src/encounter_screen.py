@@ -75,7 +75,10 @@ class EncounterScreen(Screen):
         self.register_event_type('on_bar')
 
     def next_on_deck(self):
-        self.on_deck = choice(self.beastie_widgets)
+        self.on_deck = choice([
+            b for b in self.beastie_widgets
+            if not b.creature.current_happiness == b.creature.max_happiness
+        ])
 
     def on_enter(self):
         self.beat_length = self.music_player.beat_length
