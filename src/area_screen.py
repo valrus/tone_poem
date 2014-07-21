@@ -198,12 +198,6 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 mode="triangles",
                 texture=self.__class__.sprites.texture(self.__class__.wall_page)
             ))
-        print("\n".join(["{}".format(t) for t in
-                         group(verts, 7)]
-        ))
-        print("\n".join(["{}".format(t) for t in
-                         group(indices, 3)]
-        ))
 
 
 class MapLayout(RelativeLayout):

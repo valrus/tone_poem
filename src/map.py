@@ -38,54 +38,18 @@ def constrain(given_point, m, bounds, rightward=True):
     the right-most one if rightward is True and the left-most one otherwise.
     """
     x0, y0 = given_point
-    if rightward:
-        # second point is to the right
-        if m > 0:
-            # up and to the right
-            vertical_border_distance = bounds.h - y0
-            if abs(m * (bounds.w - x0)) > vertical_border_distance:
-                # closest border is up
-                dy = vertical_border_distance
-                dx = dy / m if m else 0
-            else:
-                # closest border is right
-                dx = bounds.w - x0
-                dy = dx * m
-        else:
-            # down and to the right
-            vertical_border_distance = y0
-            if abs(m * (bounds.w - x0)) > vertical_border_distance:
-                # closest border is down
-                dy = -vertical_border_distance
-                dx = dy / m if m else 0
-            else:
-                # closest border is right
-                dx = bounds.w - x0
-                dy = dx * m
+    up = (m > 0) if rightward else (m < 0)
+    if up:
+        vertical_border_distance = bounds.h - y0
     else:
-        # second point is to the left
-        if m < 0:
-            # up and to the left
-            vertical_border_distance = abs(bounds.h - y0)
-            if abs(m * x0) > vertical_border_distance:
-                # closest border is up
-                dy = vertical_border_distance
-                dx = dy / m if m else 0
-            else:
-                # closest border is left
-                dx = -x0
-                dy = dx * m
-        else:
-            # down and to the left
-            vertical_border_distance = y0
-            if abs(m * x0) > vertical_border_distance:
-                # closest border is down
-                dy = -vertical_border_distance
-                dx = dy / m if m else 0
-            else:
-                # closest border is left
-                dx = -x0
-                dy = dx * m
+        vertical_border_distance = y0
+    dx = (bounds.w - x0) if rightward else -x0
+    rise = abs(m * dx)
+    if rise > vertical_border_distance:
+        dy = vertical_border_distance * (1 if up else -1)
+        dx = dy / m if m else 0
+    else:
+        dy = dx * m
     return Coords(x0 + dx, y0 + dy)
 
 
@@ -137,7 +101,6 @@ class GraphMap(object):
             if all(v != -1 and not self.pointOutsideBounds(*verts[v])
                    for v in (v1, v2)):
                 # edge has a vertex at either end, easy
-                print("easy:", verts[v1], verts[v2])
                 walls.append((Coords(*verts[v1]), Coords(*verts[v2])))
                 continue
             if self.pointOutsideBounds(*verts[v1]):
