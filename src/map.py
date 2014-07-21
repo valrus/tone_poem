@@ -6,7 +6,7 @@ from itertools import chain, combinations
 import networkx as nx
 
 from poisson.poisson_disk import sample_poisson_uniform
-from tools import Coords, Size, WINDOW_SIZE, distance_squared, sandwich
+from tools import Coords, Size, WINDOW_SIZE, distance_squared
 from voronoi import computeDelaunayTriangulation, computeVoronoiDiagram
 
 LONG_DISTANCE = 300
@@ -25,7 +25,18 @@ def intersect(s1, s2):
                      0 < (vx * dy1 - vy * dx1) / vp < 1]) else 0
 
 
-def constrain(given_point, bounds, m, rightward=True):
+def constrain(given_point, m, bounds, rightward=True):
+    """Given a line and bounds, return the point at the edge of those bounds.
+
+    given_point should be a 2-tuple, m the slope of a line (which can be 0
+    or positive or negative infinity). bounds should be an object with w and h
+    attributes representing width and height.
+
+    Returns a Coords object for the point lying on the rectangle with lower
+    left corner at (0, 0) and dimensions given by bounds that intersects the
+    line through given_point with slope m. There are two such points; return
+    the right-most one if rightward is True and the left-most one otherwise.
+    """
     x0, y0 = given_point
     if rightward:
         # second point is to the right
@@ -59,7 +70,7 @@ def constrain(given_point, bounds, m, rightward=True):
             if abs(m * x0) > vertical_border_distance:
                 # closest border is up
                 dy = vertical_border_distance
-                dx = -dy / m if m else 0
+                dx = dy / m if m else 0
             else:
                 # closest border is left
                 dx = -x0
@@ -136,13 +147,12 @@ class GraphMap(object):
             # apparently v1, v2 go left to right
             # calculate an edge point using slope = -a/b
             a, b, __ = abcs[i]
-            m = -a / b if b else 0
             p0 = verts[v1 if v1 != -1 else v2]
             if self.pointOutsideBounds(*p0):
                 continue
-            p1 = constrain(p0, self.dims, -a/b, rightward=(v1 != -1))
-            if any([self.pointOutsideBounds(*p) for p in (p0, p1)]):
-                print(p0, m)
+            # need to handle case where b is 0
+            p1 = constrain(p0, (-a / b) if b else (-a * float('inf')),
+                           self.dims, rightward=(v1 != -1))
             walls.append((p0, p1))
         return walls
 
