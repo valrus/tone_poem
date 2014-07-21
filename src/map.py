@@ -39,10 +39,7 @@ def constrain(given_point, m, bounds, rightward=True):
     """
     x0, y0 = given_point
     up = (m > 0) if rightward else (m < 0)
-    if up:
-        vertical_border_distance = bounds.h - y0
-    else:
-        vertical_border_distance = y0
+    vertical_border_distance = (bounds.h - y0) if up else y0
     dx = (bounds.w - x0) if rightward else -x0
     rise = abs(m * dx)
     if rise > vertical_border_distance:

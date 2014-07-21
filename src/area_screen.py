@@ -18,7 +18,6 @@ from kivy.uix.widget import Widget
 
 from musicplayer import MusicPlayer
 from tools import Coords, Size, Rect, Quad, distance_squared, WINDOW_SIZE
-from tools import group
 import map
 
 
@@ -135,18 +134,18 @@ class ForestMapRenderer(SkeletronMapRenderer):
 
     def _mesh_box(self, uvs, x, y, scale=1.0):
         return [
-            -uvs.size.w * scale, -uvs.size.h * scale,
-            uvs.corners.x1, uvs.corners.y1,
-            0, x, y,
-            uvs.size.w * scale, -uvs.size.h * scale,
-            uvs.corners.x2, uvs.corners.y1,
-            0, x, y,
-            uvs.size.w * scale, uvs.size.h * scale,
-            uvs.corners.x2, uvs.corners.y2,
-            0, x, y,
-            -uvs.size.w * scale, uvs.size.h * scale,
-            uvs.corners.x1, uvs.corners.y2,
-            0, x, y
+            (-uvs.size.w * scale, -uvs.size.h * scale,
+             uvs.corners.x1, uvs.corners.y1,
+             0, x, y),
+            (uvs.size.w * scale, -uvs.size.h * scale,
+             uvs.corners.x2, uvs.corners.y1,
+             0, x, y),
+            (uvs.size.w * scale, uvs.size.h * scale,
+             uvs.corners.x2, uvs.corners.y2,
+             0, x, y),
+            (-uvs.size.w * scale, uvs.size.h * scale,
+             uvs.corners.x1, uvs.corners.y2,
+             0, x, y)
         ]
 
     def _triangle_indices(self, start):
@@ -165,9 +164,8 @@ class ForestMapRenderer(SkeletronMapRenderer):
         x, y = v1
         x_going_right = (dx > 0)
         while y > v2.y and ((x < v2.x) == x_going_right):
-            jitter = gauss(0, 0.3)
-            # 7 is the number of list indices per vertex
-            indices.extend(self._triangle_indices(len(verts) // 7))
+            jitter = gauss(0, 0.25)
+            indices.extend(self._triangle_indices(len(verts)))
             verts.extend(
                 self._mesh_box(
                     self._choose_tex(),
@@ -177,9 +175,6 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 )
             )
             x, y = x + dx, y + dy
-            # Rectangle(texture=choice(self.sprites),
-            #           pos=(x + jitter * dy, y + jitter * dx),
-            #           size=(30, 51))
 
     def draw_walls(self, walls):
         if not self.walls_overlay:
@@ -187,13 +182,12 @@ class ForestMapRenderer(SkeletronMapRenderer):
         self.walls_overlay.canvas.clear()
         verts, indices = [], []
         with self.walls_overlay.canvas:
-            for wall in sorted(walls, key=lambda w: min(w[0].y, w[1].y),
-                               reverse=True):
+            for wall in walls:
                 self._get_tree_line(wall, verts, indices)
-            # Need multiple meshes, max vertices length is 65535
+            # NB: Max vertices length is 65535. Might need multiple meshes.
             self.wall_meshes.append(Mesh(
                 indices=indices,
-                vertices=verts,
+                vertices=chain(*sorted(verts, key=lambda i: -i[6])),
                 fmt=self.__class__.vertex_format,
                 mode="triangles",
                 texture=self.__class__.sprites.texture(self.__class__.wall_page)
