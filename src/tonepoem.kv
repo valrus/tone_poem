@@ -17,22 +17,23 @@
 
         MapLayout:
             id: map_root
-            ground_overlay: root.ids.ground_overlay
-            walls_overlay: root.ids.map_overlay
-            features_overlay: root.ids.map_features
+            ground_overlay: ground_overlay
+            walls_overlay: map_overlay
+            features_overlay: map_features
             size_hint: 1.0, 1.0
 
             RelativeLayout:
                 id: ground_overlay
-                size_hint: 1.0, 1.0
-
-            MapOverlay:
-                id: map_overlay
-                size_hint: 1.0, 1.0
+                size: root.size
 
             MapFeatures:
                 id: map_features
-                size_hint: 1.0, 1.0
+                size: root.size
+
+            MapOverlay:
+                id: map_overlay
+                size: root.size
+
 
 
 <CreatureWidget>:

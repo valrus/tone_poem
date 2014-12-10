@@ -9,17 +9,67 @@ from random import gauss, choice
 
 from kivy.core.image import Image
 from kivy.event import EventDispatcher
-from kivy.graphics import Line, Mesh, Rectangle, RenderContext
 from kivy.properties import ObjectProperty, BooleanProperty
+from kivy.graphics import Line, Mesh, Rectangle, RenderContext
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.stencilview import StencilView
 from kivy.uix.widget import Widget
 
-from creature_widget import CreatureWidget
 from musicplayer import MusicPlayer
-from tools import Size, Quad, Rect, Coords, distance_squared, WINDOW_SIZE
+from tools import Coords, Size, Rect, Quad, distance_squared, WINDOW_SIZE
 import map
+
+
+class VertexWidget(Widget):
+    def __init__(self, vertex, **kw):
+        super(VertexWidget, self).__init__(**kw)
+        self.vertex = vertex
+
+
+class MapOverlay(RelativeLayout):
+    needs_full_redraw = BooleanProperty(True)
+
+    def __init__(self, **kw):
+        self.canvas = RenderContext(use_parent_projection=True)
+        self.canvas.shader.source = "multiquad.glsl"
+        super(MapOverlay, self).__init__(**kw)
+
+
+class MapFeatures(MapOverlay, StencilView):
+    pass
+
+
+class MapRenderer(EventDispatcher):
+    ground_tile = None
+    walls_overlay = ObjectProperty(None)
+    features_overlay = ObjectProperty(None)
+    vertex_format = [
+        ('vPosition', 2, 'float'),
+        ('vTexCoords0', 2, 'float'),
+        ('vRotation', 1, 'float'),
+        ('vCenter', 2, 'float')
+    ]
+
+
+class SkeletronMapRenderer(MapRenderer):
+    def draw_paths(self, paths, clear=True):
+        if not self.features_overlay:
+            return
+        if self.features_overlay.needs_full_redraw:
+            self.features_overlay.canvas.clear()
+        with self.features_overlay.canvas:
+            for p1, p2 in paths:
+                Line(points=list(chain(p1, p2)),
+                     dash_offset=2, dash_length=2, width=1)
+
+    def draw_walls(self, walls):
+        if not self.walls_overlay:
+            return
+        self.walls_overlay.canvas.clear()
+        with self.walls_overlay.canvas:
+            for w1, w2 in walls:
+                Line(points=list(chain(w1, w2)), width=2)
 
 
 class AtlasData(object):
@@ -62,40 +112,6 @@ class UVData(object):
                             (tex_dims.x + tex_dims.w) / atlas_w,
                             1. - (tex_dims.y + tex_dims.h) / atlas_h)
         self.size = Size(tex_dims.w, tex_dims.h)
-
-
-class MapRenderer(EventDispatcher):
-    ground_tile = None
-    walls_overlay = ObjectProperty(None)
-    features_overlay = ObjectProperty(None)
-    vertex_format = [
-        ('vPosition', 2, 'float'),
-        ('vTexCoords0', 2, 'float'),
-        ('vRotation', 1, 'float'),
-        ('vCenter', 2, 'float')
-    ]
-
-
-class SkeletronMapRenderer(MapRenderer):
-    def draw_paths(self, paths, clear=True):
-        if not self.features_overlay:
-            return
-        print("Drawing paths", self.features_overlay.size)
-        if self.features_overlay.needs_full_redraw:
-            self.features_overlay.canvas.clear()
-            print("Full redraw")
-        with self.features_overlay.canvas:
-            for p1, p2 in paths:
-                Line(points=list(chain(p1, p2)),
-                     dash_offset=2, dash_length=2, width=1)
-
-    def draw_walls(self, walls):
-        if not self.walls_overlay:
-            return
-        self.walls_overlay.canvas.clear()
-        with self.walls_overlay.canvas:
-            for w1, w2 in walls:
-                Line(points=list(chain(w1, w2)), width=2)
 
 
 class ForestMapRenderer(SkeletronMapRenderer):
@@ -163,7 +179,6 @@ class ForestMapRenderer(SkeletronMapRenderer):
     def draw_walls(self, walls):
         if not self.walls_overlay:
             return
-        print("Drawing walls")
         self.walls_overlay.canvas.clear()
         verts, indices = [], []
         with self.walls_overlay.canvas:
@@ -177,25 +192,6 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 mode="triangles",
                 texture=self.__class__.sprites.texture(self.__class__.wall_page)
             ))
-
-
-class VertexWidget(Widget):
-    def __init__(self, vertex, **kw):
-        super(VertexWidget, self).__init__(**kw)
-        self.vertex = vertex
-
-
-class MapOverlay(RelativeLayout):
-    needs_full_redraw = BooleanProperty(True)
-
-    def __init__(self, **kw):
-        self.canvas = RenderContext(use_parent_projection=True)
-        self.canvas.shader.source = "multiquad.glsl"
-        super(MapOverlay, self).__init__(**kw)
-
-
-class MapFeatures(RelativeLayout, StencilView):
-    needs_full_redraw = BooleanProperty(True)
 
 
 class MapLayout(RelativeLayout):
@@ -223,11 +219,10 @@ class MapLayout(RelativeLayout):
 
     def on_ground_overlay(self, instance, value):
         self.renderer.ground_overlay = value
-        if self.renderer.__class__.ground_tile:
-            self.ground_texture = Image(self.renderer.__class__.ground_tile).texture
-            self.ground_texture.wrap = "repeat"
-            self.ground_texture.uvsize = (WINDOW_SIZE.w // 512 + 1,
-                                          WINDOW_SIZE.h // 512 + 1)  # probably change
+        self.ground_texture = Image(self.renderer.__class__.ground_tile).texture
+        self.ground_texture.wrap = "repeat"
+        self.ground_texture.uvsize = (WINDOW_SIZE.w // 512 + 1,
+                                      WINDOW_SIZE.h // 512 + 1)  # probably change
 
     def on_walls_overlay(self, instance, value):
         self.renderer.walls_overlay = value

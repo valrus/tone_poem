@@ -23,3 +23,7 @@ src/sprites
 expt_*.py
 src/mingus
 pygame_test.py
+private
+.dir-locals.el
+
+*.profile
