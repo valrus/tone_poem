@@ -8,7 +8,7 @@ from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty
 
 from mingus.midi import fluidsynth
-from mido.midifiles import MidiFile, MetaMessage, Message
+from mido.midifiles import MidiFile, MetaMessage, Message, merge_tracks
 
 SYNTH = fluidsynth.midi.fs
 DEFAULT_TEMPO = 500000
@@ -87,7 +87,7 @@ class MidiFilePlayer(EventDispatcher):
                 elif msg.type == 'time_signature':
                     self.time_signature = (msg.numerator, msg.denominator)
 
-        self.messages = self.mf._merge_tracks(self.mf.tracks)
+        self.messages = merge_tracks(self.mf.tracks)
         self.msg_queue = deque(self.messages)
         self.msg_buffer = deque()
         self.now = 0
@@ -101,8 +101,11 @@ class MidiFilePlayer(EventDispatcher):
             self.beat_length,
             self.bar_length
         ) = self._calculate_lengths()
-        self.seconds_per_tick = self.mf._compute_tick_time(self.tempo)
+        self.seconds_per_tick = self._get_seconds_per_tick(self.mf.ticks_per_beat)
         self.ticks_per_bar = (self.mf.ticks_per_beat * self.beats_per_bar)
+
+    def _get_seconds_per_tick(self, ticks_per_beat):
+        return (self.tempo / 1000000.0) / float(ticks_per_beat)
 
     def _calculate_lengths(self):
         """Calculate and return the length of beats and bars in this file.

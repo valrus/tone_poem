@@ -11,12 +11,12 @@ from mingus.core.notes import note_to_int
 from creature_widget import CreatureWidget
 from musicplayer import MusicPlayer
 from party import BeastieParty
-from tools import y_iterator
+from tools import ROOT_DIR, y_iterator
 
 
 class EncounterScreen(Screen):
     music_player = ObjectProperty(
-        MusicPlayer(os.path.join("midi", "simplebeat.mid"))
+        MusicPlayer(os.path.join(ROOT_DIR, "midi", "simplebeat.mid"))
     )
     beat_length = NumericProperty(1.0)
 

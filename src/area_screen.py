@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
+from __future__ import print_function
 
 import json
 import os
@@ -9,16 +10,21 @@ from random import gauss, choice
 
 from kivy.core.image import Image
 from kivy.event import EventDispatcher
-from kivy.graphics import Line, Mesh, Rectangle, RenderContext
+from kivy.graphics import Color, Line, Mesh, Rectangle, RenderContext
+from kivy.graphics.texture import Texture
 from kivy.properties import ObjectProperty, BooleanProperty
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.stencilview import StencilView
 from kivy.uix.widget import Widget
 
+from creature import PlayerCharacter
 from creature_widget import CreatureWidget
 from musicplayer import MusicPlayer
-from tools import Size, Quad, Rect, Coords, distance_squared, WINDOW_SIZE
+from tools import Size, Quad, Rect, Coords, distance_squared
+from tools import ROOT_DIR, WINDOW_SIZE
 import map
 
 
@@ -66,42 +72,44 @@ class UVData(object):
 
 class MapRenderer(EventDispatcher):
     ground_tile = None
-    walls_overlay = ObjectProperty(None)
-    features_overlay = ObjectProperty(None)
+    overlay = ObjectProperty(None)
+    features = ObjectProperty(None)
+
+
+class SkeletronMapRenderer(MapRenderer):
+    def __init__(self, **kw):
+        super(SkeletronMapRenderer, self).__init__(**kw)
+        self.ground_texture = Texture.create(size=(512, 512), colorfmt='rgb')
+        self.custom_shader = None
+
+    def draw_paths(self, paths):
+        if not self.features:
+            return
+        with self.features.canvas:
+            Color(1.0, 1.0, 1.0)
+            for p1, p2 in paths:
+                Line(points=list(chain(p1, p2)),
+                     dash_offset=2, dash_length=2, width=1)
+
+    def draw_walls(self, walls):
+        if not self.overlay:
+            return
+        with self.overlay.canvas:
+            Color(1.0, 0, 0)
+            for w1, w2 in walls:
+                print("Line", w1, w2)
+                Line(points=list(chain(w1, w2)), width=2)
+
+
+class ForestMapRenderer(SkeletronMapRenderer):
+    sprites = AtlasData(os.path.join(ROOT_DIR, "sprites", "trees.atlas"))
+    wall_page = 0
     vertex_format = [
         ('vPosition', 2, 'float'),
         ('vTexCoords0', 2, 'float'),
         ('vRotation', 1, 'float'),
         ('vCenter', 2, 'float')
     ]
-
-
-class SkeletronMapRenderer(MapRenderer):
-    def draw_paths(self, paths, clear=True):
-        if not self.features_overlay:
-            return
-        print("Drawing paths", self.features_overlay.size)
-        if self.features_overlay.needs_full_redraw:
-            self.features_overlay.canvas.clear()
-            print("Full redraw")
-        with self.features_overlay.canvas:
-            for p1, p2 in paths:
-                Line(points=list(chain(p1, p2)),
-                     dash_offset=2, dash_length=2, width=1)
-
-    def draw_walls(self, walls):
-        if not self.walls_overlay:
-            return
-        self.walls_overlay.canvas.clear()
-        with self.walls_overlay.canvas:
-            for w1, w2 in walls:
-                Line(points=list(chain(w1, w2)), width=2)
-
-
-class ForestMapRenderer(SkeletronMapRenderer):
-    ground_tile = os.path.join("sprites", "grass_tile.png")
-    sprites = AtlasData(os.path.join("sprites", "trees.atlas"))
-    wall_page = 0
 
     def _read_atlas(self):
         return self.__class__.sprites.atlas_uv_dict(
@@ -110,6 +118,11 @@ class ForestMapRenderer(SkeletronMapRenderer):
 
     def __init__(self, **kw):
         super(ForestMapRenderer, self).__init__(**kw)
+        self.ground_texture = Image(os.path.join("sprites", "grass_tile.png")).texture
+        self.ground_texture.wrap = "repeat"
+        self.ground_texture.uvsize = (WINDOW_SIZE.w // 512 + 1,
+                                      WINDOW_SIZE.h // 512 + 1)  # probably change
+        self.custom_shader = os.path.join(ROOT_DIR, "multiquad.glsl")
         self.uvs = self._read_atlas()
         self.wall_meshes = []
 
@@ -161,12 +174,10 @@ class ForestMapRenderer(SkeletronMapRenderer):
             x, y = x + dx, y + dy
 
     def draw_walls(self, walls):
-        if not self.walls_overlay:
+        if not self.overlay:
             return
-        print("Drawing walls")
-        self.walls_overlay.canvas.clear()
         verts, indices = [], []
-        with self.walls_overlay.canvas:
+        with self.overlay.canvas:
             for wall in walls:
                 self._get_tree_line(wall, verts, indices)
             # NB: Max vertices length is 65535. Might need multiple meshes.
@@ -179,93 +190,96 @@ class ForestMapRenderer(SkeletronMapRenderer):
             ))
 
 
+class MapWrapper(AnchorLayout):
+    """Thin wrapper widget to make it easier to position a widget by center on the map."""
+    def __init__(self, center_coords, wrapped_widget, **kw):
+        self.center_coords = center_coords
+        super(MapWrapper, self).__init__(**kw)
+        self.add_widget(wrapped_widget)
+
+
 class VertexWidget(Widget):
-    def __init__(self, vertex, **kw):
-        super(VertexWidget, self).__init__(**kw)
-        self.vertex = vertex
+    pass
 
 
 class MapOverlay(RelativeLayout):
     needs_full_redraw = BooleanProperty(True)
 
-    def __init__(self, **kw):
-        self.canvas = RenderContext(use_parent_projection=True)
-        self.canvas.shader.source = "multiquad.glsl"
-        super(MapOverlay, self).__init__(**kw)
 
-
-class MapFeatures(RelativeLayout, StencilView):
+class MapFeatures(RelativeLayout):
     needs_full_redraw = BooleanProperty(True)
 
+    def __init__(self, vertices_pos, **kw):
+        super(MapFeatures, self).__init__(**kw)
+        for vertex_pos in vertices_pos:
+            # TODO: Does passing in center=vertex_pos work in Kivy 1.9?
+            vertex_widget = VertexWidget(size_hint=(0.01, 0.01))
+            wrapper = MapWrapper(vertex_pos, vertex_widget)
+            self.add_widget(wrapper)
+        start_widget_pos = choice(vertices_pos)
+        print("Adding pc at", start_widget_pos)
+        self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
+        self.pcWidget = CreatureWidget(
+            self.pc,
+            pos=start_widget_pos,
+            size=(30, 30),
+            size_hint=(None, None),
+            label=False
+        )
+        self.add_widget(MapWrapper(start_widget_pos, self.pcWidget))
 
-class MapLayout(RelativeLayout):
-    ground_overlay = ObjectProperty(None)
-    walls_overlay = ObjectProperty(None)
-    features_overlay = ObjectProperty(None)
+
+class MapLayout(AnchorLayout):
+    overlay = ObjectProperty(None)
+    features = ObjectProperty(None)
+    margin = 60
 
     def __init__(self, **kw):
-        self.map = map.GraphMap()
+        self.map = map.GraphMap(margin=MapLayout.margin)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
-        self.vertex_dict = {}
-        self.ground_texture = None
-        super(RelativeLayout, self).__init__(**kw)
-        for vertex in self.map.nodes_iter():
-            widget = VertexWidget(
-                vertex,
-                pos_hint={"center_x": vertex.x / self.map.dims.w,
-                          "center_y": vertex.y / self.map.dims.h},
-                size_hint=(0.01, 0.01)
-            )
-            self.add_widget(widget)
-            self.vertex_dict[vertex] = widget
-            widget.bind(pos=self.draw_edges)
-        self.bind(size=self.draw_walls)
 
-    def on_ground_overlay(self, instance, value):
-        self.renderer.ground_overlay = value
-        if self.renderer.__class__.ground_tile:
-            self.ground_texture = Image(self.renderer.__class__.ground_tile).texture
-            self.ground_texture.wrap = "repeat"
-            self.ground_texture.uvsize = (WINDOW_SIZE.w // 512 + 1,
-                                          WINDOW_SIZE.h // 512 + 1)  # probably change
+        super(MapLayout, self).__init__(**kw)
+        self.vertices_pos = list(self.map.nodes_iter())
+        self.overlay = MapOverlay(size_hint=(1.0, 1.0),
+                                  background_color=(0, 0, 0, 0))
+        self.add_widget(self.overlay)
+        self.features = MapFeatures(self.vertices_pos,
+                                    size_hint=(None, None),
+                                    size=tuple(WINDOW_SIZE),
+                                    pos=(0, 0),
+                                    background_color=(0, 0, 0, 0))
+        self.add_widget(self.features)
 
-    def on_walls_overlay(self, instance, value):
-        self.renderer.walls_overlay = value
-        self.draw_walls(None, None)
+    def on_overlay(self, instance, value):
+        self.renderer.overlay = value
+        value.canvas = RenderContext(use_parent_projection=True)
+        if self.renderer.custom_shader:
+            value.canvas.shader.source = self.renderer.custom_shader
+        value.bind(size=self.draw_walls)
 
-    def on_features_overlay(self, instance, value):
-        self.renderer.features_overlay = value
-        self.draw_edges(None, None)
+    def on_features(self, instance, value):
+        self.renderer.features = value
+        self.draw_edges(value, value.size)
 
-    def draw_edges(self, vertex_widget, new_pos):
+    def _transform_map_vertex(self, vert):
+        return Coords(self.width * vert[0] / self.map.dims.w,
+                      self.height * vert[1] / self.map.dims.h)
+
+    def draw_edges(self, widget, size):
         """Draw lines between this map's vertices.
-
-        Currently just naïvely draws all the lines. Could be made smarter
-        by referencing obj and only drawing the lines connected to it.
         """
-        if self.features_overlay.needs_full_redraw:
-            vertices = self.vertex_dict.keys()
-            self.features_overlay.needs_full_redraw = True
-        else:
-            vertices = vertex_widget.vertex
-            self.features_overlay.needs_full_redraw = False
         self.renderer.draw_paths([
-            (self.vertex_dict[v1].center, self.vertex_dict[v2].center)
-            for v1, v2 in self.map.edges_iter(vertices)
+            [v1, v2]
+            for v1, v2 in self.map.edges_iter(self.vertices_pos)
         ])
 
     def draw_walls(self, widget, size):
-        if not size or size[0] != WINDOW_SIZE.w or size[1] != WINDOW_SIZE.h:
-            print(size)
+        if not (size and tuple(size) == tuple(WINDOW_SIZE)):
             return
-        with self.ground_overlay.canvas:
-            Rectangle(pos=(0, 0), size=self.size, texture=self.ground_texture)
         self.renderer.draw_walls([
-            [Coords(self.width * x1 / self.map.dims.w,
-                    self.height * y1 / self.map.dims.h),
-             Coords(self.width * x2 / self.map.dims.w,
-                    self.height * y2 / self.map.dims.h)]
-            for (x1, y1), (x2, y2) in self.map.walls
+            [self._transform_map_vertex(v1),
+             self._transform_map_vertex(v2)]
+            for v1, v2 in self.map.walls
         ])
 
 

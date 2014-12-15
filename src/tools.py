@@ -1,3 +1,4 @@
+import os
 from collections import namedtuple
 from math import sqrt
 
@@ -6,6 +7,8 @@ Rect = namedtuple("Rect", "x y w h")
 Quad = namedtuple("Quad", "x1 y1 x2 y2")
 
 WINDOW_SIZE = Size(1200, 800)
+
+ROOT_DIR = os.path.dirname(__file__)
 
 
 class Coords(namedtuple("Coords", "x y")):

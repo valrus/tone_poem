@@ -85,3 +85,4 @@ class TonePoemApp(App):
 
 if __name__ == '__main__':
     TonePoemApp().run()
+    sys.exit(1)  # so that emacs will keep the compilation window open

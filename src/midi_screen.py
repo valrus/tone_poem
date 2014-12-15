@@ -7,6 +7,7 @@ from kivy.uix.screenmanager import Screen
 
 from keyboard import MidiKeyboard
 from musicplayer import MusicPlayer
+from tools import ROOT_DIR
 
 
 def midi_dict_args_converter(row_index, device_name):
@@ -20,7 +21,7 @@ def midi_dict_args_converter(row_index, device_name):
 
 class MidiScreen(Screen):
     music_player = ObjectProperty(
-        MusicPlayer(os.path.join(os.getcwd(), "midi", "brady.mid"))
+        MusicPlayer(os.path.join(ROOT_DIR, "midi", "brady.mid"))
     )
 
     def __init__(self, **kw):

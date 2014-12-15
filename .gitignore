@@ -25,5 +25,7 @@ src/mingus
 pygame_test.py
 private
 .dir-locals.el
+src/.python-version
+builder_stats.html
 
 *.profile
