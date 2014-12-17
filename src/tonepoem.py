@@ -4,8 +4,8 @@ import kivy
 kivy.require('1.1.2')
 
 from kivy.config import Config
-Config.set('graphics', 'width', '1200')
-Config.set('graphics', 'height', '800')
+Config.set('graphics', 'width', WINDOW_SIZE.w)
+Config.set('graphics', 'height', WINDOW_SIZE.h)
 
 from kivy.app import App
 from kivy.core.window import Window

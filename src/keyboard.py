@@ -46,6 +46,7 @@ class KeyboardThread(threading.Thread):
         self.event = threading.Event()
 
     def run(self):
+        # need to use bank_select
         fluidsynth.set_instrument(PLAYER_CHANNEL,
                                   InstrumentNames["Acoustic Grand Piano"])
         fluidsynth.play_Note(self.note)
@@ -97,7 +98,7 @@ class MidiKeyboard(RelativeLayout):
         setattr(self.keys[key_index], attr, value)
 
     def clear_annotations(self):
-        for key_index, annotation in self.annotations.iteritems():
+        for key_index, annotation in self.annotations.items():
             setattr(self.keys[key_index], annotation.attr, annotation.normal)
 
     def midi_port_changed(self, list_adapter, *args):

@@ -31,46 +31,6 @@ def float_almost_equal(f1, f2):
     return abs(f1 - f2) < 0.0001
 
 
-# def schedule_notes(midifile, meta_messages=False):
-#     """Play back all tracks.
-
-#     The generator will sleep between each message, so that
-#     messages are yielded with correct timing. The time attribute
-#     is set to the number of seconds slept since the previous
-#     message.
-
-#     You will receive copies of the original messages, so you can
-#     safely modify them without ruining the tracks.
-#     """
-
-#     # The tracks of type 2 files are not in sync, so they can
-#     # not be played back like this.
-#     if midifile.type == 2:
-#         raise TypeError('type 2 file can not be played back like this')
-
-#     seconds_per_tick = midifile._compute_tick_time(DEFAULT_TEMPO)
-
-#     messages = midifile._merge_tracks(midifile.tracks)
-
-#     # Play back messages.
-#     now = 0
-#     for message in messages:
-#         delta = message.time - now
-#         if delta:
-#             sleep_time = delta * seconds_per_tick
-#             time.sleep(sleep_time)
-#         else:
-#             sleep_time = 0.0
-
-#         if meta_messages or isinstance(message, Message):
-#             message.time = sleep_time
-#             yield message
-
-#         now += delta
-#         if message.type == 'set_tempo':
-#             seconds_per_tick = self._compute_tick_time(message.tempo)
-
-
 class MidiFilePlayer(EventDispatcher):
     status = NumericProperty(PlayStatus.Start)
     bar_number = NumericProperty(0)
@@ -135,7 +95,9 @@ class MidiFilePlayer(EventDispatcher):
         elif msg.type == 'program_change':
             SYNTH.program_change(msg.channel, msg.program)
         elif msg.type == 'reset':
-            SYNTH.program_reset()
+            pass
+        else:
+            pass
 
     def _synth_buffer(self, *args):
         while self.msg_buffer:
@@ -194,15 +156,12 @@ class MidiFilePlayer(EventDispatcher):
         self.status = PlayStatus.Stopped
         Clock.unschedule(self._bar_break)
         # Fill the queue with messages that stop all notes currently playing.
-        # Put a reset in there for good measure, though it doesn't seem to
-        # actually do anything.
         self.msg_queue = deque([Message('note_off', note=n, channel=c,
                                         velocity=0, time=0)
                                 for n, c in self.notes_on])
         self.msg_queue.append(Message('reset'))
         Clock.unschedule(self._synth_buffer)
         self.fill_buffer()
-        self.reset()
 
     def reset(self):
         self.now, self.bar_number = 0, 0
