@@ -2,9 +2,8 @@ from functools import partial
 from random import choice
 
 from kivy.animation import Animation
-from kivy.properties import BooleanProperty, NumericProperty
+from kivy.properties import BooleanProperty
 
-import mingus.core.notes as notes
 from mingus.containers.Note import Note
 from mingus.containers.NoteContainer import NoteContainer
 
@@ -45,9 +44,7 @@ class BeastieAnimation(object):
 
 # TODO: Unit testable
 class NoteCollector(object):
-
     """Gather notes into a NoteContainer as MIDI msgs come in."""
-
     def __init__(self):
         self.pending_notes = {}
         self.received_notes = NoteContainer()

@@ -1,0 +1,21 @@
+{
+	"folders":
+	[
+	   {
+	       "follow_symlinks": true,
+	       "path": "."
+	   }
+	],
+	"settings":
+	{
+	   "python_interpreter": "/Users/valrus/.pyenv/versions/kivy2/bin/python"
+	},
+    "build_systems": [
+      {
+        "name": "tone_poem",
+        "cmd": ["/Users/valrus/.pyenv/versions/kivy2/bin/python", "/Users/valrus/Code/tone_poem/bin/py", "/Users/valrus/Code/tone_poem/src/tonepoem.py", "-m", "inspector", "-m", "recorder"],
+        "file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+        "selector": "source.python"
+      }
+    ]
+}

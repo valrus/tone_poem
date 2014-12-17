@@ -2,54 +2,21 @@ import os
 from random import choice
 from functools import partial
 from itertools import chain
-from threading import Thread
 
 from kivy.clock import Clock
-from kivy.properties import StringProperty, ObjectProperty, NumericProperty
-from kivy.uix.anchorlayout import AnchorLayout
+from kivy.properties import ObjectProperty, NumericProperty
 from kivy.uix.screenmanager import Screen
 from mingus.core.notes import note_to_int
 
+from creature_widget import CreatureWidget
 from musicplayer import MusicPlayer
 from party import BeastieParty
-from tools import y_iterator
-
-
-class CreatureWidget(AnchorLayout):
-    image_source = StringProperty(None)
-    creature = ObjectProperty(None)
-    beat_length = NumericProperty(1.0)
-    happy_label = ObjectProperty(None)
-
-    def __init__(self, creature, **kw):
-        super(CreatureWidget, self).__init__(**kw)
-        self.creature = creature
-        self.image_source = self.creature.atlas
-        self.thread = None
-
-    def flash(self, *args):
-        length = self.beat_length
-        self.thread = Thread(
-            target=self.creature.anim.build(length).start,
-            args=(self.ids.sprite, )
-        )
-        self.thread.start()
-
-    def on_happiness(self, *args):
-        self.happy_label.text = "".join([
-            u"\u25CF" * self.creature.current_happiness,
-            u"\u25CB" * (self.creature.max_happiness
-                         - self.creature.current_happiness)
-        ])
-
-    def on_creature(self, *args):
-        self.on_happiness()
-        self.creature.bind(current_happiness=self.on_happiness)
+from tools import ROOT_DIR, y_iterator
 
 
 class EncounterScreen(Screen):
     music_player = ObjectProperty(
-        MusicPlayer(os.path.join("midi", "simplebeat.mid"))
+        MusicPlayer(os.path.join(ROOT_DIR, "midi", "simplebeat.mid"))
     )
     beat_length = NumericProperty(1.0)
 
@@ -75,7 +42,10 @@ class EncounterScreen(Screen):
         self.register_event_type('on_bar')
 
     def next_on_deck(self):
-        self.on_deck = choice(self.beastie_widgets)
+        self.on_deck = choice([
+            b for b in self.beastie_widgets
+            if not b.creature.current_happiness == b.creature.max_happiness
+        ])
 
     def on_enter(self):
         self.beat_length = self.music_player.beat_length

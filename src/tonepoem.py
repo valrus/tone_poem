@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 
+import os
 from collections import OrderedDict
 
-from tools import WINDOW_SIZE
+from tools import WINDOW_SIZE, ROOT_DIR
 
 import kivy
 kivy.require('1.1.2')
@@ -72,7 +73,7 @@ class TonePoemApp(App):
         self.profile.dump_stats('tone_poem.profile')
 
     def build(self):
-        fluidsynth.init('sounds/FluidR3_GM.sf2')
+        fluidsynth.init(os.path.join(ROOT_DIR, 'sounds', 'FluidR3_GM.sf2'))
 
         party = PlayerParty()
         sm = TonePoemGame(OrderedDict([
