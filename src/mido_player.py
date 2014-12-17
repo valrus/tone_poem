@@ -37,12 +37,12 @@ class MidiFilePlayer(EventDispatcher):
 
     def __init__(self, fileName):
         self.mf = MidiFile(fileName)
+        print(fileName)
         self.time_signature = None
         self.tempo = DEFAULT_TEMPO
         for i, track in enumerate(self.mf.tracks):
             for msg in [m for m in track if isinstance(m, MetaMessage)]:
                 if msg.type == 'set_tempo':
-                    print(msg.tempo)
                     self.tempo = msg.tempo
                 elif msg.type == 'time_signature':
                     self.time_signature = (msg.numerator, msg.denominator)
@@ -61,11 +61,14 @@ class MidiFilePlayer(EventDispatcher):
             self.beat_length,
             self.bar_length
         ) = self._calculate_lengths()
+        print(self.beat_length)
         self.seconds_per_tick = self._get_seconds_per_tick(self.mf.ticks_per_beat)
         self.ticks_per_bar = (self.mf.ticks_per_beat * self.beats_per_bar)
 
     def _get_seconds_per_tick(self, ticks_per_beat):
-        return (self.tempo / 1000000.0) / float(ticks_per_beat)
+        seconds_per_tick = (self.tempo / 1000000.0) / float(ticks_per_beat)
+        print(ticks_per_beat, self.tempo, seconds_per_tick)
+        return seconds_per_tick
 
     def _calculate_lengths(self):
         """Calculate and return the length of beats and bars in this file.
@@ -84,7 +87,8 @@ class MidiFilePlayer(EventDispatcher):
         return beats_per_bar, beat_length, beats_per_bar * beat_length
 
     def _synth_msg(self, msg, *args):
-        self.now = msg.time
+        self.now += msg.time
+        print(msg, self.now)
         if msg.type == 'note_on':
             SYNTH.noteon(msg.channel, msg.note, msg.velocity)
             self.notes_on.add((msg.note, msg.channel))
@@ -118,9 +122,8 @@ class MidiFilePlayer(EventDispatcher):
     def fill_buffer(self):
         if self.msg_queue:
             self.msg_buffer.append(self.msg_queue.popleft())
-            self.delta = self.msg_buffer[0].time - self.now
-            while (self.msg_queue
-                   and self.msg_queue[0].time - self.now == self.delta):
+            self.delta = self.msg_buffer[0].time
+            while self.msg_queue and self.msg_queue[0].time == self.delta:
                 self.msg_buffer.append(self.msg_queue.popleft())
             self._schedule_buffer()
             # XXX: Scheduling a bar break will fail if there are no messages
