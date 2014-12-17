@@ -203,12 +203,10 @@ class VertexWidget(Widget):
 
 
 class MapOverlay(RelativeLayout):
-    needs_full_redraw = BooleanProperty(True)
+    pass
 
 
 class MapFeatures(RelativeLayout):
-    needs_full_redraw = BooleanProperty(True)
-
     def __init__(self, vertices_pos, **kw):
         super(MapFeatures, self).__init__(**kw)
         for vertex_pos in vertices_pos:
@@ -222,7 +220,7 @@ class MapFeatures(RelativeLayout):
         self.pcWidget = CreatureWidget(
             self.pc,
             pos=start_widget_pos,
-            size=(30, 30),
+            size=(50, 50),
             size_hint=(None, None),
             label=False
         )
