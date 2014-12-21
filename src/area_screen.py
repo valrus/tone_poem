@@ -75,6 +75,12 @@ class MapRenderer(EventDispatcher):
     overlay = ObjectProperty(None)
     features = ObjectProperty(None)
 
+    def draw_paths(self, paths):
+        return
+
+    def draw_walls(self, walls):
+        return 
+
 
 class SkeletronMapRenderer(MapRenderer):
     def __init__(self, **kw):
@@ -203,22 +209,30 @@ class VertexWidget(Widget):
 
 
 class MapOverlay(RelativeLayout):
-    pass
+    def __init__(self, **kw):
+        renderer = kw.pop("renderer", None)
+        print("shader:", renderer)
+        super(RelativeLayout, self).__init__(**kw)
+        if renderer:
+            self.canvas = RenderContext(use_parent_projection=True)
+            if renderer.custom_shader:
+                self.canvas.shader.source = renderer.custom_shader
 
 
 class MapFeatures(RelativeLayout):
-    def __init__(self, vertices_pos, **kw):
+    def __init__(self, **kw):
         super(MapFeatures, self).__init__(**kw)
+
+    def add_vertices(self, vertices_pos):
         for vertex_pos in vertices_pos:
             # TODO: Does passing in center=vertex_pos work in Kivy 1.9?
             vertex_widget = VertexWidget(size_hint=(0.01, 0.01))
             wrapper = MapWrapper(vertex_pos, vertex_widget)
             self.add_widget(wrapper)
-        start_widget_pos = choice(vertices_pos)
-        print("Adding pc at", start_widget_pos)
-        self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
+
+    def add_pc(self, pc, start_widget_pos):
         self.pcWidget = CreatureWidget(
-            self.pc,
+            pc,
             pos=start_widget_pos,
             size=(50, 50),
             size_hint=(None, None),
@@ -230,33 +244,28 @@ class MapFeatures(RelativeLayout):
 class MapLayout(AnchorLayout):
     overlay = ObjectProperty(None)
     features = ObjectProperty(None)
+    renderer = ObjectProperty(None)
     margin = 60
 
     def __init__(self, **kw):
         self.map = map.GraphMap(margin=MapLayout.margin)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
-
-        super(MapLayout, self).__init__(**kw)
         self.vertices_pos = list(self.map.nodes_iter())
+        self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
+        super(MapLayout, self).__init__(**kw)
         self.overlay = MapOverlay(size_hint=(1.0, 1.0),
-                                  background_color=(0, 0, 0, 0))
+                                  background_color=(0, 0, 0, 0),
+                                  renderer=self.renderer)
         self.add_widget(self.overlay)
-        self.features = MapFeatures(self.vertices_pos,
-                                    size_hint=(None, None),
-                                    size=tuple(WINDOW_SIZE),
-                                    pos=(0, 0),
-                                    background_color=(0, 0, 0, 0))
-        self.add_widget(self.features)
 
     def on_overlay(self, instance, value):
         self.renderer.overlay = value
-        value.canvas = RenderContext(use_parent_projection=True)
-        if self.renderer.custom_shader:
-            value.canvas.shader.source = self.renderer.custom_shader
         value.bind(size=self.draw_walls)
 
     def on_features(self, instance, value):
         self.renderer.features = value
+        value.add_vertices(self.vertices_pos)
+        value.add_pc(self.pc, choice(self.vertices_pos))
         self.draw_edges(value, value.size)
 
     def _transform_map_vertex(self, vert):
