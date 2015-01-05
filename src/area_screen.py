@@ -211,7 +211,6 @@ class VertexWidget(Widget):
 class MapOverlay(RelativeLayout):
     def __init__(self, **kw):
         renderer = kw.pop("renderer", None)
-        print("shader:", renderer)
         super(MapOverlay, self).__init__(**kw)
         if renderer:
             self.canvas = RenderContext(use_parent_projection=True)
@@ -253,22 +252,23 @@ class MapLayout(AnchorLayout):
         self.vertices_pos = list(self.map.nodes_iter())
         self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
         super(MapLayout, self).__init__(**kw)
-        self.overlay = MapOverlay(size_hint=(1.0, 1.0),
+        self.overlay = MapOverlay(size_hint=(None, None),
+                                  size=tuple(WINDOW_SIZE),
                                   background_color=(0, 0, 0, 0),
                                   renderer=self.renderer)
         self.add_widget(self.overlay)
 
     def on_overlay(self, instance, value):
         self.renderer.overlay = value
-        value.bind(size=self.draw_walls)
+        self.draw_walls()
 
     def on_features(self, instance, value):
         self.renderer.features = value
         value.add_vertices(self.vertices_pos)
         value.add_pc(self.pc, choice(self.vertices_pos))
-        self.draw_edges(value, value.size)
+        self.draw_edges()
 
-    def draw_edges(self, widget, size):
+    def draw_edges(self):
         """Draw lines between this map's vertices.
         """
         self.renderer.draw_paths([
@@ -276,9 +276,7 @@ class MapLayout(AnchorLayout):
             for v1, v2 in self.map.edges_iter(self.vertices_pos)
         ])
 
-    def draw_walls(self, widget, size):
-        if not (size and tuple(size) == tuple(WINDOW_SIZE)):
-            return
+    def draw_walls(self):
         self.renderer.draw_walls([[Coords(*v1), Coords(*v2)]
                                   for v1, v2 in self.map.walls])
 
