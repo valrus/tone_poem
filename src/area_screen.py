@@ -212,7 +212,7 @@ class MapOverlay(RelativeLayout):
     def __init__(self, **kw):
         renderer = kw.pop("renderer", None)
         print("shader:", renderer)
-        super(RelativeLayout, self).__init__(**kw)
+        super(MapOverlay, self).__init__(**kw)
         if renderer:
             self.canvas = RenderContext(use_parent_projection=True)
             if renderer.custom_shader:
@@ -268,10 +268,6 @@ class MapLayout(AnchorLayout):
         value.add_pc(self.pc, choice(self.vertices_pos))
         self.draw_edges(value, value.size)
 
-    def _transform_map_vertex(self, vert):
-        return Coords(self.width * vert[0] / self.map.dims.w,
-                      self.height * vert[1] / self.map.dims.h)
-
     def draw_edges(self, widget, size):
         """Draw lines between this map's vertices.
         """
@@ -283,13 +279,11 @@ class MapLayout(AnchorLayout):
     def draw_walls(self, widget, size):
         if not (size and tuple(size) == tuple(WINDOW_SIZE)):
             return
-        self.renderer.draw_walls([
-            [self._transform_map_vertex(v1),
-             self._transform_map_vertex(v2)]
-            for v1, v2 in self.map.walls
-        ])
+        self.renderer.draw_walls([[Coords(*v1), Coords(*v2)]
+                                  for v1, v2 in self.map.walls])
 
 
 class AreaScreen(Screen):
     def __init__(self, **kw):
-        super(Screen, self).__init__(**kw)
+        super(AreaScreen, self).__init__(**kw)
+

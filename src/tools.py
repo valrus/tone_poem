@@ -22,7 +22,7 @@ class Coords(namedtuple("Coords", "x y")):
         try:
             return Coords(scalar * self.x, scalar * self.y)
         except:
-            raise NotImplemented
+            raise NotImplementedError
 
 
 class Vect(namedtuple("Vect", "p1 p2")):
