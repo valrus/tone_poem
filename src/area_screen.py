@@ -240,18 +240,18 @@ class MapFeatures(RelativeLayout):
         self.add_widget(MapWrapper(start_widget_pos, self.pcWidget))
 
 
-class MapLayout(AnchorLayout):
+class AreaScreen(Screen):
     overlay = ObjectProperty(None)
     features = ObjectProperty(None)
     renderer = ObjectProperty(None)
     margin = 60
 
     def __init__(self, **kw):
-        self.map = map.GraphMap(margin=MapLayout.margin)
+        self.map = map.GraphMap(margin=AreaScreen.margin)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
         self.vertices_pos = list(self.map.nodes_iter())
         self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
-        super(MapLayout, self).__init__(**kw)
+        super(AreaScreen, self).__init__(**kw)
         self.overlay = MapOverlay(size_hint=(None, None),
                                   size=tuple(WINDOW_SIZE),
                                   background_color=(0, 0, 0, 0),
@@ -279,9 +279,4 @@ class MapLayout(AnchorLayout):
     def draw_walls(self):
         self.renderer.draw_walls([[Coords(*v1), Coords(*v2)]
                                   for v1, v2 in self.map.walls])
-
-
-class AreaScreen(Screen):
-    def __init__(self, **kw):
-        super(AreaScreen, self).__init__(**kw)
 

@@ -11,24 +11,23 @@
 
 
 <AreaScreen>:
-    MapLayout:
-        id: map_root
-        features: map_features
-        anchor_x: 'center'
-        anchor_y: 'center'
-        size_hint: 1.0, 1.0
+    id: map_root
+    features: map_features
+    anchor_x: 'center'
+    anchor_y: 'center'
+    size_hint: 1.0, 1.0
 
-        canvas.before:
-            Rectangle:
-                pos: 0, 0
-                size: root.size
-                texture: map_root.renderer.ground_texture
-
-        MapFeatures:
-            id: map_features
-            size_hint: None, None
-            size: tuple(WINDOW_SIZE)
+    canvas.before:
+        Rectangle:
             pos: 0, 0
+            size: root.size
+            texture: map_root.renderer.ground_texture
+
+    MapFeatures:
+        id: map_features
+        size_hint: None, None
+        size: tuple(WINDOW_SIZE)
+        pos: 0, 0
              
 
 <MapWrapper>:
