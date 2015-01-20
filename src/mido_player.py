@@ -37,7 +37,6 @@ class MidiFilePlayer(EventDispatcher):
 
     def __init__(self, fileName):
         self.mf = MidiFile(fileName)
-        print(fileName)
         self.time_signature = None
         self.tempo = DEFAULT_TEMPO
         for i, track in enumerate(self.mf.tracks):
@@ -61,13 +60,11 @@ class MidiFilePlayer(EventDispatcher):
             self.beat_length,
             self.bar_length
         ) = self._calculate_lengths()
-        print(self.beat_length)
         self.seconds_per_tick = self._get_seconds_per_tick(self.mf.ticks_per_beat)
         self.ticks_per_bar = (self.mf.ticks_per_beat * self.beats_per_bar)
 
     def _get_seconds_per_tick(self, ticks_per_beat):
         seconds_per_tick = (self.tempo / 1000000.0) / float(ticks_per_beat)
-        print(ticks_per_beat, self.tempo, seconds_per_tick)
         return seconds_per_tick
 
     def _calculate_lengths(self):
@@ -88,7 +85,6 @@ class MidiFilePlayer(EventDispatcher):
 
     def _synth_msg(self, msg, *args):
         self.now += msg.time
-        print(msg, self.now)
         if msg.type == 'note_on':
             SYNTH.noteon(msg.channel, msg.note, msg.velocity)
             self.notes_on.add((msg.note, msg.channel))

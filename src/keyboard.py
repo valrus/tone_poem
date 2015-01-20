@@ -29,7 +29,8 @@ class MidiInputDispatcher(EventDispatcher):
         for watcher in self.watchers:
             watcher.dispatch('on_midi', *args)
 
-    def open_port(self, portName):
+    def open_port(self, list_adapter, *args):
+        portName = list_adapter.selection[0].text
         if not self.port or self.port.name != portName:
             if self.port:
                 self.port.close()
@@ -81,16 +82,19 @@ class KeyAnnotation(object):
 
 
 class MidiKeyboard(RelativeLayout):
-    midi_in = ObjectProperty(MidiInputDispatcher())
+    midi_in = ObjectProperty(None)
 
     def __init__(self, **kw):
-        self.midi_in.watchers.add(self)
         self.register_event_type('on_midi')
         self.keys = [None] * 12
         self.events = {}
         self.annotations = {}
         self.watchers = set()
         super(MidiKeyboard, self).__init__(**kw)
+
+    def on_midi_in(self, inst, value):
+        print("got a midi_in")
+        value.watchers.add(self)
 
     def annotate(self, key_index, attr, value):
         self.annotations[key_index] = KeyAnnotation(
@@ -101,9 +105,6 @@ class MidiKeyboard(RelativeLayout):
     def clear_annotations(self):
         for key_index, annotation in self.annotations.items():
             setattr(self.keys[key_index], annotation.attr, annotation.normal)
-
-    def midi_port_changed(self, list_adapter, *args):
-        self.midi_in.open_port(list_adapter.selection[0].text)
 
     def on_midi(self, msg):
         if is_note_on(msg):

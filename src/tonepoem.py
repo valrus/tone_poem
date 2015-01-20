@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import os
+import sys
 from collections import OrderedDict
 
 from tools import WINDOW_SIZE, ROOT_DIR
@@ -15,7 +16,9 @@ Config.set('graphics', 'height', WINDOW_SIZE.h)
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager
+from kivy.properties import ObjectProperty
 
+from keyboard import MidiInputDispatcher
 from midi_screen import MidiScreen
 from encounter_screen import EncounterScreen
 from area_screen import AreaScreen
@@ -64,6 +67,8 @@ class TonePoemGame(ScreenManager):
 
 
 class TonePoemApp(App):
+    midi_in = ObjectProperty(None)
+
     def on_start(self):
         self.profile = cProfile.Profile()
         self.profile.enable()
@@ -74,6 +79,7 @@ class TonePoemApp(App):
 
     def build(self):
         fluidsynth.init(os.path.join(ROOT_DIR, 'sounds', 'FluidR3_GM.sf2'))
+        self.midi_in = MidiInputDispatcher()
 
         party = PlayerParty()
         sm = TonePoemGame(OrderedDict([

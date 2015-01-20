@@ -18,6 +18,7 @@ class EncounterScreen(Screen):
     music_player = ObjectProperty(
         MusicPlayer(os.path.join(ROOT_DIR, "midi", "simplebeat.mid"))
     )
+    kb = ObjectProperty(None)
     beat_length = NumericProperty(1.0)
 
     def __init__(self, **kw):
@@ -36,10 +37,13 @@ class EncounterScreen(Screen):
             self.beastie_widgets.append(CreatureWidget(b))
             self.ids.beastie_area.add_widget(self.beastie_widgets[-1])
             b.bind(is_attacking=self.on_beastie_attack)
-            self.ids.kb.watchers.add(b)
 
         self.music_player.watchers.add(self)
         self.register_event_type('on_bar')
+
+    def on_kb(self, inst, value):
+        for b in self.beasties.members:
+            value.watchers.add(b)
 
     def next_on_deck(self):
         self.on_deck = choice([
@@ -78,7 +82,7 @@ class EncounterScreen(Screen):
         if is_attacking:
             if note_highlight:
                 key_index = note_to_int(note_highlight.name)
-                self.ids.kb.annotate(key_index, "rgb", [1., 0.5, 0.5])
+                self.kb.annotate(key_index, "rgb", [1., 0.5, 0.5])
         else:
-            self.ids.kb.clear_annotations()
+            self.kb.clear_annotations()
             self.next_on_deck()

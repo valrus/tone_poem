@@ -22,6 +22,7 @@ from kivy.uix.widget import Widget
 
 from creature import PlayerCharacter
 from creature_widget import CreatureWidget
+from keyboard import MidiInputDispatcher
 from musicplayer import MusicPlayer
 from tools import Size, Quad, Rect, Coords, distance_squared
 from tools import ROOT_DIR, WINDOW_SIZE
@@ -244,6 +245,7 @@ class AreaScreen(Screen):
     overlay = ObjectProperty(None)
     features = ObjectProperty(None)
     renderer = ObjectProperty(None)
+    midi_in = ObjectProperty(None)
     margin = 60
 
     def __init__(self, **kw):
@@ -258,6 +260,10 @@ class AreaScreen(Screen):
                                   renderer=self.renderer)
         self.add_widget(self.overlay)
 
+    def on_midi_in(self, instance, value):
+        value.watchers.add(self)
+        self.register_event_type('on_midi')
+
     def on_overlay(self, instance, value):
         self.renderer.overlay = value
         self.draw_walls()
@@ -267,6 +273,9 @@ class AreaScreen(Screen):
         value.add_vertices(self.vertices_pos)
         value.add_pc(self.pc, choice(self.vertices_pos))
         self.draw_edges()
+
+    def on_midi(self, msg):
+        print("midi!")
 
     def draw_edges(self):
         """Draw lines between this map's vertices.
