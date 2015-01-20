@@ -93,7 +93,6 @@ class MidiKeyboard(RelativeLayout):
         super(MidiKeyboard, self).__init__(**kw)
 
     def on_midi_in(self, inst, value):
-        print("got a midi_in")
         value.watchers.add(self)
 
     def annotate(self, key_index, attr, value):
@@ -108,7 +107,6 @@ class MidiKeyboard(RelativeLayout):
 
     def on_midi(self, msg):
         if is_note_on(msg):
-            print("on", msg.note)
             self.keys[msg.note % 12].pressed = True
             note = Note().from_int(msg.note)
             note.channel, note.velocity = PLAYER_CHANNEL, msg.velocity
