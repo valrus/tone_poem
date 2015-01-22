@@ -8,6 +8,7 @@ from itertools import chain
 from math import sqrt
 from random import gauss, choice
 
+from kivy.animation import Animation
 from kivy.core.image import Image
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Line, Mesh, Rectangle, RenderContext
@@ -23,6 +24,7 @@ from kivy.uix.widget import Widget
 from creature import PlayerCharacter
 from creature_widget import CreatureWidget
 from keyboard import MidiInputDispatcher
+from mingushelpers import is_note_on, is_note_off
 from musicplayer import MusicPlayer
 from tools import Size, Quad, Rect, Coords, distance_squared
 from tools import ROOT_DIR, WINDOW_SIZE
@@ -251,8 +253,9 @@ class AreaScreen(Screen):
     def __init__(self, **kw):
         self.map = map.GraphMap(margin=AreaScreen.margin)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
-        self.vertices_pos = list(self.map.nodes_iter())
+        self.vertices_pos = self.map.nodes()
         self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
+        self.pc_loc = choice(self.vertices_pos)
         super(AreaScreen, self).__init__(**kw)
         self.overlay = MapOverlay(size_hint=(None, None),
                                   size=tuple(WINDOW_SIZE),
@@ -271,11 +274,14 @@ class AreaScreen(Screen):
     def on_features(self, instance, value):
         self.renderer.features = value
         value.add_vertices(self.vertices_pos)
-        value.add_pc(self.pc, choice(self.vertices_pos))
+        value.add_pc(self.pc, self.pc_loc)
         self.draw_edges()
 
     def on_midi(self, msg):
-        print("midi!")
+        if is_note_off(msg):
+            self.pc_loc = choice(self.map.neighbors(self.pc_loc))
+            anim = Animation(center=(self.pc_loc.x, self.pc_loc.y))
+            anim.start(self.features.pcWidget)
 
     def draw_edges(self):
         """Draw lines between this map's vertices.

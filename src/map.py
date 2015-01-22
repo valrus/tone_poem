@@ -116,5 +116,8 @@ class GraphMap(object):
             walls.append((p0, p1))
         return walls
 
+    def neighbors(self, node):
+        return list(nx.all_neighbors(self.graph, node))
+
     def __getattr__(self, attrname):
         return getattr(self.graph, attrname)
