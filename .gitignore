@@ -23,25 +23,17 @@ src/mingus
 src/pyfluidsynth3
 .mr.developer.cfg
 expt_*.py
-<<<<<<< HEAD
 *.swp
 .#*
 .dir-locals.el
 eggs-backup/
 private/
-src/.python-version
 src/builder_stats.html
 src/synth.py
 src/tone_poem.profile
 test_basic.py
 tone_poem.profile
-=======
-src/mingus
 pygame_test.py
-private
-.dir-locals.el
-src/.python-version
+.python-version
 builder_stats.html
-
 *.profile
->>>>>>> master
