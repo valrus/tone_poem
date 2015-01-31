@@ -13,7 +13,6 @@
 
 <AreaScreen>:
     id: map_root
-    features: map_features
     midi_in: app.midi_in
     anchor_x: 'center'
     anchor_y: 'center'
@@ -24,12 +23,6 @@
             pos: 0, 0
             size: root.size
             texture: map_root.renderer.ground_texture
-
-    MapFeatures:
-        id: map_features
-        size_hint: None, None
-        size: tuple(WINDOW_SIZE)
-        pos: 0, 0
              
 
 <MapWrapper>:
@@ -38,6 +31,11 @@
     pos: self.center_coords.x - self.width / 2, self.center_coords.y - self.height / 2
     center: self.center_coords
 
+
+<MapOverlay>:
+    size_hint: None, None
+    size: tuple(WINDOW_SIZE)
+    pos: 0, 0
 
 
 <CreatureWidget>:

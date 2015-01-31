@@ -19,6 +19,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.stencilview import StencilView
+from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 
 from creature import PlayerCharacter
@@ -243,6 +244,17 @@ class MapFeatures(RelativeLayout):
         self.add_widget(MapWrapper(start_widget_pos, self.pcWidget))
 
 
+def getNavigationWidgets(start, edges):
+    widgets = []
+    for p1, p2 in edges:
+        if p2 == start:
+            p1, p2 = p2, p1
+        widgets.append(Label(text='X',
+                             center=p1 + 0.25 * (p2 - p1),
+                             size=(50, 50),
+                             size_hint=(None, None)))
+    return widgets
+
 class AreaScreen(Screen):
     overlay = ObjectProperty(None)
     features = ObjectProperty(None)
@@ -257,11 +269,10 @@ class AreaScreen(Screen):
         self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
         self.pc_loc = choice(self.vertices_pos)
         super(AreaScreen, self).__init__(**kw)
-        self.overlay = MapOverlay(size_hint=(None, None),
-                                  size=tuple(WINDOW_SIZE),
-                                  background_color=(0, 0, 0, 0),
-                                  renderer=self.renderer)
+        self.overlay = MapOverlay(renderer=self.renderer)
         self.add_widget(self.overlay)
+        self.features = MapFeatures(renderer=self.renderer)
+        self.add_widget(self.features)
 
     def on_midi_in(self, instance, value):
         value.watchers.add(self)
@@ -276,11 +287,15 @@ class AreaScreen(Screen):
         value.add_vertices(self.vertices_pos)
         value.add_pc(self.pc, self.pc_loc)
         self.draw_edges()
+        print(self.pc_loc)
+        for w in getNavigationWidgets(self.pc_loc, self.map.edges([self.pc_loc])):
+            print("adding widget", w, "with center", w.center)
+            value.add_widget(w)
 
     def on_midi(self, msg):
         if is_note_off(msg):
             self.pc_loc = choice(self.map.neighbors(self.pc_loc))
-            anim = Animation(center=(self.pc_loc.x, self.pc_loc.y))
+            anim = Animation(center=(self.pc_loc.x, self.pc_loc.y), duration=0.5)
             anim.start(self.features.pcWidget)
 
     def draw_edges(self):

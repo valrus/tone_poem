@@ -24,6 +24,12 @@ class Coords(namedtuple("Coords", "x y")):
         except:
             raise NotImplementedError
 
+    def __truediv__(self, other):
+        try:
+            return Coords(self.x / other, self.y / other)
+        except:
+            raise NotImplementedError
+
 
 class Vect(namedtuple("Vect", "p1 p2")):
     def __abs__(self):
@@ -73,3 +79,4 @@ def bezier(v1, v2, steps=5):
         r1 += d1
         r2 += d2
     yield r2
+
