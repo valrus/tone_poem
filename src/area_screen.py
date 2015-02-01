@@ -30,6 +30,7 @@ from musicplayer import MusicPlayer
 from tools import Size, Quad, Rect, Coords, distance_squared
 from tools import ROOT_DIR, WINDOW_SIZE
 import map
+import map_label
 
 
 class AtlasData(object):
@@ -244,15 +245,24 @@ class MapFeatures(RelativeLayout):
         self.add_widget(MapWrapper(start_widget_pos, self.pcWidget))
 
 
-def getNavigationWidgets(start, edges):
+def getNavigationWidgets(start, graph_map, edges):
     widgets = []
     for p1, p2 in edges:
         if p2 == start:
             p1, p2 = p2, p1
-        widgets.append(Label(text='X',
+        widgets.append(Label(text=graph_map.edge_label(p1, p2),
+                             font_name='fonts/DejaVuSans.ttf',
                              center=p1 + 0.25 * (p2 - p1),
                              size=(50, 50),
                              size_hint=(None, None)))
+    widgets.append(Label(text=graph_map.node_label(start),
+                         font_name='fonts/DejaVuSans.ttf',
+                         center=start,
+                         size=(150, 150),
+                         font_size=48,
+                         bold=True,
+                         size_hint=(None, None),
+                         color=(1, 1, 1, 0.5)))
     return widgets
 
 class AreaScreen(Screen):
@@ -264,6 +274,7 @@ class AreaScreen(Screen):
 
     def __init__(self, **kw):
         self.map = map.GraphMap(margin=AreaScreen.margin)
+        self.map.add_labels(map_label.NodeNote)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
         self.vertices_pos = self.map.nodes()
         self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
@@ -288,7 +299,7 @@ class AreaScreen(Screen):
         value.add_pc(self.pc, self.pc_loc)
         self.draw_edges()
         print(self.pc_loc)
-        for w in getNavigationWidgets(self.pc_loc, self.map.edges([self.pc_loc])):
+        for w in getNavigationWidgets(self.pc_loc, self.map, self.map.edges([self.pc_loc])):
             print("adding widget", w, "with center", w.center)
             value.add_widget(w)
 

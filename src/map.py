@@ -117,7 +117,22 @@ class GraphMap(object):
         return walls
 
     def neighbors(self, node):
-        return list(nx.all_neighbors(self.graph, node))
+        return self.graph.neighbors(node)
+
+    def add_labels(self, nodeType):
+        nx.set_node_attributes(self.graph, 'label', {
+            n: nodeType() for n in self.graph.nodes_iter()
+        })
+        nx.set_edge_attributes(self.graph, 'label', {
+            (n1, n2): self.graph.node[n1]['label'].delta(self.graph.node[n2]['label'])
+            for n1, n2 in self.graph.edges()
+        })
+
+    def edge_label(self, n1, n2):
+        return str(self.graph[n1][n2]['label'])
+
+    def node_label(self, n):
+        return str(self.graph.node[n]['label'])
 
     def __getattr__(self, attrname):
         return getattr(self.graph, attrname)
