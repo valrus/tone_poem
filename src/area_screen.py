@@ -8,7 +8,7 @@ from itertools import chain
 from math import sqrt
 from random import gauss, choice
 
-from kivy.animation import Animation
+from kivy.animation import Animation, AnimationTransition
 from kivy.core.image import Image
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Line, Mesh, Rectangle, RenderContext
@@ -22,10 +22,11 @@ from kivy.uix.stencilview import StencilView
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 
+from beastie import NoteCollector
 from creature import PlayerCharacter
 from creature_widget import CreatureWidget
 from keyboard import MidiInputDispatcher
-from mingushelpers import is_note_on, is_note_off
+from mingushelpers import is_note_on, is_note_off, notes_match
 from musicplayer import MusicPlayer
 from tools import Size, Quad, Rect, Coords, distance_squared
 from tools import ROOT_DIR, WINDOW_SIZE
@@ -250,12 +251,12 @@ def getNavigationWidgets(start, graph_map, edges):
     for p1, p2 in edges:
         if p2 == start:
             p1, p2 = p2, p1
-        widgets.append(Label(text=graph_map.edge_label(p1, p2),
+        widgets.append(Label(text=str(graph_map.edge_label(p1, p2)),
                              font_name='fonts/DejaVuSans.ttf',
                              center=p1 + 0.25 * (p2 - p1),
                              size=(50, 50),
                              size_hint=(None, None)))
-    widgets.append(Label(text=graph_map.node_label(start),
+    widgets.append(Label(text=str(graph_map.node_label(start)),
                          font_name='fonts/DejaVuSans.ttf',
                          center=start,
                          size=(150, 150),
@@ -279,11 +280,13 @@ class AreaScreen(Screen):
         self.vertices_pos = self.map.nodes()
         self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
         self.pc_loc = choice(self.vertices_pos)
+        self.nav_widgets = []
         super(AreaScreen, self).__init__(**kw)
         self.overlay = MapOverlay(renderer=self.renderer)
         self.add_widget(self.overlay)
         self.features = MapFeatures(renderer=self.renderer)
         self.add_widget(self.features)
+        self.ear = NoteCollector()
 
     def on_midi_in(self, instance, value):
         value.watchers.add(self)
@@ -298,16 +301,37 @@ class AreaScreen(Screen):
         value.add_vertices(self.vertices_pos)
         value.add_pc(self.pc, self.pc_loc)
         self.draw_edges()
-        print(self.pc_loc)
-        for w in getNavigationWidgets(self.pc_loc, self.map, self.map.edges([self.pc_loc])):
+        self.resetNavigationWidgets()
+
+    def resetNavigationWidgets(self, *args):
+        """Set up labels describing how to move the PC.
+
+        Takes *args because it's used as a callback for Animation.on_complete
+        and I don't know what that passes in."""
+        for w in self.nav_widgets:
+            self.features.remove_widget(w)
+        del self.nav_widgets[:]
+        self.nav_widgets = getNavigationWidgets(self.pc_loc, self.map, self.map.edges([self.pc_loc]))
+        for w in self.nav_widgets:
             print("adding widget", w, "with center", w.center)
-            value.add_widget(w)
+            self.features.add_widget(w)
 
     def on_midi(self, msg):
-        if is_note_off(msg):
-            self.pc_loc = choice(self.map.neighbors(self.pc_loc))
-            anim = Animation(center=(self.pc_loc.x, self.pc_loc.y), duration=0.5)
-            anim.start(self.features.pcWidget)
+        self.ear.hear(msg)
+        if not self.ear.heard_count() >= 1:
+            return
+        heard = self.ear.retrieve()
+        print("Heard", heard)
+        for neighbor in self.map.neighbors(self.pc_loc):
+            print("Comparing to", self.map.node_label(neighbor).value)
+            if notes_match(heard, self.map.node_label(neighbor).value):
+                self.pc_loc = neighbor
+                anim = Animation(
+                    center=(self.pc_loc.x, self.pc_loc.y),
+                    duration=0.5,
+                    transition=AnimationTransition.in_out_quad)
+                anim.on_complete = self.resetNavigationWidgets
+                anim.start(self.features.pcWidget)
 
     def draw_edges(self):
         """Draw lines between this map's vertices.

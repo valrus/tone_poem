@@ -129,10 +129,10 @@ class GraphMap(object):
         })
 
     def edge_label(self, n1, n2):
-        return str(self.graph[n1][n2]['label'])
+        return self.graph[n1][n2]['label']
 
     def node_label(self, n):
-        return str(self.graph.node[n]['label'])
+        return self.graph.node[n]['label']
 
     def __getattr__(self, attrname):
         return getattr(self.graph, attrname)

@@ -59,8 +59,8 @@ class NoteCollector(object):
         return len(self.received_notes) if self.received_notes else 0
 
     def retrieve(self):
-        returnVal = self.received_notes
-        self.received_notes = None
+        returnVal = NoteContainer(self.received_notes)
+        self.received_notes.empty()
         return returnVal
 
 
