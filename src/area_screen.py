@@ -206,6 +206,8 @@ class MapWrapper(AnchorLayout):
     """Thin wrapper widget to make it easier to position a widget by center on the map."""
     def __init__(self, center_coords, wrapped_widget, **kw):
         self.center_coords = center_coords
+        self.size_hint = None, None
+        self.size = wrapped_widget.size
         super(MapWrapper, self).__init__(**kw)
         self.add_widget(wrapped_widget)
 
@@ -230,40 +232,51 @@ class MapFeatures(RelativeLayout):
 
     def add_vertices(self, vertices_pos):
         for vertex_pos in vertices_pos:
-            # TODO: Does passing in center=vertex_pos work in Kivy 1.9?
-            vertex_widget = VertexWidget(size_hint=(0.01, 0.01))
+            # Passing in center=vertex_pos doesn't work, hence the wrapper.
+            vertex_widget = VertexWidget(size_hint=(0.01, 0.01), center=vertex_pos)
             wrapper = MapWrapper(vertex_pos, vertex_widget)
             self.add_widget(wrapper)
 
     def add_pc(self, pc, start_widget_pos):
+        # Can't pass in center here; if size gets set after center it moves the widget
         self.pcWidget = CreatureWidget(
             pc,
-            pos=start_widget_pos,
             size=(50, 50),
             size_hint=(None, None),
             label=False
         )
-        self.add_widget(MapWrapper(start_widget_pos, self.pcWidget))
+        self.pcWidget.center = start_widget_pos
+        self.add_widget(self.pcWidget)
 
 
 def getNavigationWidgets(start, graph_map, edges):
+    # I think that these widgets aren't correctly being added at their relative position
+    # From Kivy IRC:
+    # Just like with RelativeLayout, `pos` is tricky.
+    # The pos of children/canvases should be set in a callback AFTER the widget is added/instantiated respectively.
     widgets = []
     for p1, p2 in edges:
         if p2 == start:
             p1, p2 = p2, p1
-        widgets.append(Label(text=str(graph_map.edge_label(p1, p2)),
-                             font_name='fonts/DejaVuSans.ttf',
-                             center=p1 + 0.25 * (p2 - p1),
-                             size=(50, 50),
-                             size_hint=(None, None)))
-    widgets.append(Label(text=str(graph_map.node_label(start)),
-                         font_name='fonts/DejaVuSans.ttf',
-                         center=start,
-                         size=(150, 150),
-                         font_size=48,
-                         bold=True,
-                         size_hint=(None, None),
-                         color=(1, 1, 1, 0.5)))
+        label_center = p1 + 0.25 * (p2 - p1)
+        label_text = str(graph_map.edge_label(p1, p2))
+        # Can't pass in center here; if size gets set after center it moves the widget
+        label = Label(text=label_text,
+                      font_name='fonts/DejaVuSans.ttf',
+                      size=(50, 50),
+                      size_hint=(None, None))
+        label.center = label_center
+        widgets.append(label)
+    big_label_text = str(graph_map.node_label(start))
+    big_label = Label(text=big_label_text,
+                      font_name='fonts/DejaVuSans.ttf',
+                      size=(150, 150),
+                      font_size=48,
+                      bold=True,
+                      size_hint=(None, None),
+                      color=(1, 1, 1, 0.5))
+    big_label.center = start
+    widgets.append(big_label)
     return widgets
 
 class AreaScreen(Screen):
@@ -313,7 +326,7 @@ class AreaScreen(Screen):
         del self.nav_widgets[:]
         self.nav_widgets = getNavigationWidgets(self.pc_loc, self.map, self.map.edges([self.pc_loc]))
         for w in self.nav_widgets:
-            print("adding widget", w, "with center", w.center)
+            print("adding widget", w.text, "with center", w.center)
             self.features.add_widget(w)
 
     def on_midi(self, msg):
@@ -323,8 +336,7 @@ class AreaScreen(Screen):
         heard = self.ear.retrieve()
         print("Heard", heard)
         for neighbor in self.map.neighbors(self.pc_loc):
-            print("Comparing to", self.map.node_label(neighbor).value)
-            if notes_match(heard, self.map.node_label(neighbor).value):
+            if notes_match(heard, self.map.node_label(neighbor).container()):
                 self.pc_loc = neighbor
                 anim = Animation(
                     center=(self.pc_loc.x, self.pc_loc.y),

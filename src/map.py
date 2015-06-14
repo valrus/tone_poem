@@ -66,10 +66,11 @@ class GraphMap(object):
         self.graph = nx.Graph()
         self.graph.add_nodes_from(points)
         for triangle in computeDelaunayTriangulation(points):
-            self.graph.add_edges_from([
-                (points[firstIndex], points[secondIndex])
+            self.graph.add_edges_from(chain(*[
+                [(points[firstIndex], points[secondIndex]),
+                 (points[secondIndex], points[firstIndex])]
                 for firstIndex, secondIndex in combinations(triangle, 2)
-            ])
+            ]))
         self.walls = self.computeWalls()
         self.removeMultiWallEdges()
         dist_squared = self.min_distance ** 2
