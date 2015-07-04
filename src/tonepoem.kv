@@ -11,6 +11,10 @@
             size: self.size
 
 
+<MapLabel>:
+    on_size: self.pos = self.x - (self.width / 2), self.y - (self.height / 2)
+
+
 <AreaScreen>:
     id: map_root
     midi_in: app.midi_in

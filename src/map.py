@@ -50,6 +50,18 @@ def constrain(given_point, m, bounds, rightward=True):
     return Coords(x0 + dx, y0 + dy)
 
 
+def _secondneighbors(graph, start):
+    """Generate all nodes that are distance 2 from the given one.
+
+    (Note: this means it does not include nodes adjacent to the given one.
+    """
+    immediate_neighbors = set(n for n in nx.all_neighbors(graph, start))
+    neighborhood = nx.ego_graph(graph, start, radius=2, center=False)
+    for n in neighborhood.nodes_iter():
+        if n not in immediate_neighbors:
+            yield graph.node[n]
+
+
 class GraphMap(object):
     def __init__(self, margin=60, dims=WINDOW_SIZE):
         self.dims = Size(*dims)
@@ -107,7 +119,7 @@ class GraphMap(object):
                 v2 = -1
             # apparently v1, v2 go left to right
             # calculate an edge point using slope = -a/b
-            a, b, __ = abcs[i]
+            a, b, _ = abcs[i]
             p0 = verts[v1 if v1 != -1 else v2]
             if self.pointOutsideBounds(*p0):
                 continue
@@ -120,10 +132,14 @@ class GraphMap(object):
     def neighbors(self, node):
         return self.graph.neighbors(node)
 
+    def _cleanup_nodes(self, nodeType):
+        pass
+
     def add_labels(self, nodeType):
         nx.set_node_attributes(self.graph, 'label', {
             n: nodeType() for n in self.graph.nodes_iter()
         })
+        self._cleanup_nodes(nodeType)
         nx.set_edge_attributes(self.graph, 'label', {
             (n1, n2): self.graph.node[n1]['label'].delta(self.graph.node[n2]['label'])
             for n1, n2 in self.graph.edges()
@@ -137,3 +153,23 @@ class GraphMap(object):
 
     def __getattr__(self, attrname):
         return getattr(self.graph, attrname)
+
+
+class ForestMap(GraphMap):
+    def _cleanup_nodes(self, nodeType):
+        """Avoid ambiguous edges from any node.
+
+        This means satisfying the following constraint:
+        No node may have more than one adjacent node with the same value.
+        """
+        for center in nx.nodes_iter(self.graph):
+            seen = set()
+            for neighbor in nx.all_neighbors(self.graph, center):
+                node = self.graph.node[neighbor]
+                if node['label'].name in seen:
+                    illegal = set(n['label'].name for n in _secondneighbors(self.graph, neighbor))
+                    # Not a fan of reaching in and using to_shorthand here, but...
+                    node['label'].value = [c for c in nodeType.POSSIBLE_VALUES
+                                           if not c.to_shorthand() in illegal]
+                else:
+                    seen.add(node['label'].name)

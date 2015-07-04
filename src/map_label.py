@@ -10,14 +10,23 @@ class NodeLabel(object):
 
 
 class NodeNote(NodeLabel):
+    POSSIBLE_VALUES = [Note(n, 4) for n in NOTE_NAMES]
+
     @property
     def value(self):
         return self._container[0]
 
+    @value.setter
+    def value(self, note_choices):
+        self._container = NoteContainer(choice(note_choices))
+
+    @property
+    def name(self):
+        return self.value.to_shorthand()
+
     def __init__(self, note=None):
-        self._container = NoteContainer(
-            note or Note(choice([n for n in NOTE_NAMES if len(n) == 1]), 4)
-        )
+        self._container = None
+        self.value = [note] if note else [Note(n, 4) for n in NOTE_NAMES if len(n) == 1]
 
     def delta(self, other):
         return EdgeInterval(

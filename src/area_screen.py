@@ -216,6 +216,10 @@ class VertexWidget(Widget):
     pass
 
 
+class MapLabel(Label):
+    pass
+
+
 class MapOverlay(RelativeLayout):
     def __init__(self, **kw):
         renderer = kw.pop("renderer", None)
@@ -250,10 +254,6 @@ class MapFeatures(RelativeLayout):
 
 
 def getNavigationWidgets(start, graph_map, edges):
-    # I think that these widgets aren't correctly being added at their relative position
-    # From Kivy IRC:
-    # Just like with RelativeLayout, `pos` is tricky.
-    # The pos of children/canvases should be set in a callback AFTER the widget is added/instantiated respectively.
     widgets = []
     for p1, p2 in edges:
         if p2 == start:
@@ -261,20 +261,21 @@ def getNavigationWidgets(start, graph_map, edges):
         label_center = p1 + 0.25 * (p2 - p1)
         label_text = str(graph_map.edge_label(p1, p2))
         # Can't pass in center here; if size gets set after center it moves the widget
-        label = Label(text=label_text,
-                      font_name='fonts/DejaVuSans.ttf',
-                      size=(50, 50),
-                      size_hint=(None, None))
+        label = MapLabel(text=label_text,
+                         font_name='fonts/DejaVuSans.ttf',
+                         size=(50, 50),
+                         center=label_center,
+                         size_hint=(None, None))
         label.center = label_center
         widgets.append(label)
     big_label_text = str(graph_map.node_label(start))
-    big_label = Label(text=big_label_text,
-                      font_name='fonts/DejaVuSans.ttf',
-                      size=(150, 150),
-                      font_size=48,
-                      bold=True,
-                      size_hint=(None, None),
-                      color=(1, 1, 1, 0.5))
+    big_label = MapLabel(text=big_label_text,
+                         font_name='fonts/DejaVuSans.ttf',
+                         size=(150, 150),
+                         font_size=48,
+                         bold=True,
+                         size_hint=(None, None),
+                         color=(1, 1, 1, 0.5))
     big_label.center = start
     widgets.append(big_label)
     return widgets
@@ -287,7 +288,7 @@ class AreaScreen(Screen):
     margin = 60
 
     def __init__(self, **kw):
-        self.map = map.GraphMap(margin=AreaScreen.margin)
+        self.map = map.ForestMap(margin=AreaScreen.margin)
         self.map.add_labels(map_label.NodeNote)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
         self.vertices_pos = self.map.nodes()
