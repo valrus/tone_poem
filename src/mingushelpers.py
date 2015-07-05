@@ -43,6 +43,10 @@ def is_note_off(msg):
                                       and msg.velocity == 0)
 
 
+def fancify_note_name(n):
+    return n.replace('b', '\N{MUSIC FLAT SIGN}').replace('#', '\N{MUSIC SHARP SIGN}')
+
+
 def play_stop_NoteContainer(noteContainer, duration):
     fluidsynth.play_NoteContainer(noteContainer)
     sleep(duration)

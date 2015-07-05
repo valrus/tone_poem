@@ -140,13 +140,9 @@ class GraphMap(object):
             n: nodeType() for n in self.graph.nodes_iter()
         })
         self._cleanup_nodes(nodeType)
-        nx.set_edge_attributes(self.graph, 'label', {
-            (n1, n2): self.graph.node[n1]['label'].delta(self.graph.node[n2]['label'])
-            for n1, n2 in self.graph.edges()
-        })
 
     def edge_label(self, n1, n2):
-        return self.graph[n1][n2]['label']
+        return self.node_label(n1) - self.node_label(n2)
 
     def node_label(self, n):
         return self.graph.node[n]['label']

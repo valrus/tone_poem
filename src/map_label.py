@@ -1,7 +1,7 @@
 from random import choice
 from mingus.containers.Note import Note
 from mingus.containers.NoteContainer import NoteContainer
-from mingushelpers import NOTE_NAMES
+from mingushelpers import NOTE_NAMES, fancify_note_name
 from mingus.core.intervals import determine
 
 
@@ -22,13 +22,13 @@ class NodeNote(NodeLabel):
 
     @property
     def name(self):
-        return self.value.to_shorthand()
+        return fancify_note_name(self.value.to_shorthand())
 
     def __init__(self, note=None):
         self._container = None
         self.value = [note] if note else [Note(n, 4) for n in NOTE_NAMES if len(n) == 1]
 
-    def delta(self, other):
+    def __sub__(self, other):
         return EdgeInterval(
             determine(self.value.name, other.value.name, shorthand=True),
             is_up=self.value <= other.value
@@ -56,5 +56,5 @@ class EdgeInterval(EdgeLabel):
     def __str__(self):
         return "".join([
             '\N{UPWARDS ARROW}' if self.is_up else '\N{DOWNWARDS ARROW}',
-            self.value.replace('b', '\N{MUSIC FLAT SIGN}')
+            fancify_note_name(self.value)
         ])
