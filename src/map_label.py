@@ -29,10 +29,13 @@ class NodeNote(NodeLabel):
         self.value = [note] if note else [Note(n, 4) for n in NOTE_NAMES if len(n) == 1]
 
     def __sub__(self, other):
-        return EdgeInterval(
-            determine(self.value.name, other.value.name, shorthand=True),
-            is_up=self.value <= other.value
-        )
+        is_up = self.value <= other.value
+        if is_up:
+            lower, upper = self.value.name, other.value.name
+        else:
+            lower, upper = other.value.name, self.value.name
+        return EdgeInterval(determine(lower, upper, shorthand=True), is_up=is_up)
+
 
     def container(self):
         return self._container
