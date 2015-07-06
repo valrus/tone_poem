@@ -34,7 +34,8 @@ class MidiInputDispatcher(EventDispatcher):
             if self.port:
                 self.port.close()
             print(portName)
-            self.port = mido.open_input(portName, callback=self.dispatch_midi)
+            if portName in mido.get_input_names():
+                self.port = mido.open_input(portName, callback=self.dispatch_midi)
 
     def on_midi(self, *args):
         pass

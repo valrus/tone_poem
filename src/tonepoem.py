@@ -101,13 +101,6 @@ class TonePoemApp(App):
         config.add_callback(lambda section, key, value: self.midi_in.open_port(value),
                             section='MIDI', key='Input Device')
 
-    def on_config_change(self, config, section, key, value):
-        if config is self.config:
-            token = (section, key)
-            if token == ('MIDI', 'Input Device'):
-                self.midi_in.open_port(value)
-                print('MIDI input port changed to', value)
-
     def build_settings(self, settings):
         with open(os.path.join(ROOT_DIR, SETTINGS_JSON), 'r') as json_file:
             setting_base = json.load(json_file)
