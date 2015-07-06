@@ -10,6 +10,8 @@ WINDOW_SIZE = Size(1200, 800)
 
 ROOT_DIR = os.path.dirname(__file__)
 
+CONFIG_INI = 'config.ini'
+
 
 class Coords(namedtuple("Coords", "x y")):
     def __add__(self, other):

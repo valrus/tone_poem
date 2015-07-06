@@ -1,0 +1,11 @@
+[
+    { "type": "title",
+      "title": "Tone Poem" },
+
+    { "type": "options",
+      "title": "Input Device",
+      "desc": "Device used for MIDI input",
+      "section": "MIDI",
+      "key": "Input device",
+      "options": [] }
+]

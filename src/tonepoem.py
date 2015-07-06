@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
 
+import json
 import os
 import sys
 from collections import OrderedDict
 
-from tools import WINDOW_SIZE, ROOT_DIR
+from tools import WINDOW_SIZE, ROOT_DIR, CONFIG_INI
 
 import kivy
 kivy.require('1.1.2')
@@ -16,27 +17,29 @@ Config.set('graphics', 'height', WINDOW_SIZE.h)
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager
+from kivy.uix.settings import Settings, SettingItem, SettingsPanel, SettingTitle
 from kivy.properties import ObjectProperty
 
 from keyboard import MidiInputDispatcher
-from midi_screen import MidiScreen
 from encounter_screen import EncounterScreen
 from area_screen import AreaScreen
 
 from mingus.midi import fluidsynth
 from party import PlayerParty
 
-PROFILE = True
-if PROFILE:
+SETTINGS_JSON = os.path.join(ROOT_DIR, 'settings.json')
+DEBUG = True
+if DEBUG:
     import cProfile
 
 
 class TonePoemGame(ScreenManager):
     def __init__(self, screen_dict, **kw):
         super(TonePoemGame, self).__init__(**kw)
+        self.app = kw['app']
         self.screen_dict = screen_dict
         self.screen_order = list(screen_dict.keys())
-        self.screen_index = 1
+        self.screen_index = 0
         self._kb = Window.request_keyboard(
             self._keyboard_closed, self, 'text'
         )
@@ -63,30 +66,73 @@ class TonePoemGame(ScreenManager):
             self.screen_index += 1
             self._switch_screens(self.screen_index, direction="left")
         else:
+            print(keycode)
             return False
 
 
 class TonePoemApp(App):
     midi_in = ObjectProperty(None)
+    setting_panel = ObjectProperty(None)
+    use_kivy_settings = DEBUG
+
+    def __init__(self, *args, **kw):
+        self.profile = None
+        self.config = None
+        super(TonePoemApp, self).__init__(*args, **kw)
 
     def on_start(self):
-        self.profile = cProfile.Profile()
-        self.profile.enable()
+        if DEBUG:
+            self.profile = cProfile.Profile()
+            self.profile.enable()
 
     def on_stop(self):
-        self.profile.disable()
-        self.profile.dump_stats('tone_poem.profile')
+        if DEBUG:
+            self.profile.disable()
+            self.profile.dump_stats('tone_poem.profile')
+
+    def get_application_config(self):
+        return super(TonePoemApp, self).get_application_config(
+            os.path.join(self.user_data_dir, CONFIG_INI))
+
+    def build_config(self, config):
+        config.setdefaults('MIDI', {
+            'Input device': '',
+        })
+        config.add_callback(lambda section, key, value: self.midi_in.open_port(value),
+                            section='MIDI', key='Input Device')
+
+    def on_config_change(self, config, section, key, value):
+        if config is self.config:
+            token = (section, key)
+            if token == ('MIDI', 'Input Device'):
+                self.midi_in.open_port(value)
+                print('MIDI input port changed to', value)
+
+    def build_settings(self, settings):
+        with open(os.path.join(ROOT_DIR, SETTINGS_JSON), 'r') as json_file:
+            setting_base = json.load(json_file)
+
+        # Dynamically fill in available MIDI ports.
+        for setting in setting_base:
+            if setting['title'] == 'Input Device':
+                setting['options'] = list(self.midi_in.available_ports().values())
+
+        settings.add_json_panel('Tone Poem', self.config, data=json.dumps(setting_base))
 
     def build(self):
         fluidsynth.init(os.path.join(ROOT_DIR, 'sounds', 'FluidR3_GM.sf2'))
         self.midi_in = MidiInputDispatcher()
+        midi_device = self.config.get('MIDI', 'Input device')
+        if midi_device:
+            self.midi_in.open_port(midi_device)
+
+        self.setting_panel = Settings()
 
         party = PlayerParty()
         sm = TonePoemGame(OrderedDict([
-            ('midi', MidiScreen(name='midi')),
             ('area', AreaScreen(name='area')),
             ('encounter', EncounterScreen(name='encounter', party=party))
-        ]))
+        ]), app=self)
         return sm
 
 

@@ -102,6 +102,7 @@
 
 
 <MidiScreen>:
+    id: midi_screen
     kb: keyboard
     
     BoxLayout:
@@ -111,8 +112,29 @@
         padding: 10
         spacing: 10
 
-        AnchorLayout:
-            id: midi_list_layout
+        BoxLayout:
+            id: settings_root
+            orientation: 'horizontal'
+            size_hint: 1.0, 1.0
+            padding: 10
+            spacing: 10
+
+            AnchorLayout:
+                id: midi_list_layout
+                anchor_x: 'center'
+                anchor_y: 'center'
+
+            AnchorLayout:
+                id: save_button_layout
+                anchor_x: 'center'
+                anchor_y: 'center'
+
+                Button:
+                    text: 'Save settings'
+                    padding: 10, 10
+                    size_hint: None, None
+                    size: self.texture_size
+                    on_press: root.save()
 
         AnchorLayout:
             id: keyboard_area

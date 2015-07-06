@@ -29,8 +29,7 @@ class MidiInputDispatcher(EventDispatcher):
         for watcher in self.watchers:
             watcher.dispatch('on_midi', *args)
 
-    def open_port(self, list_adapter, *args):
-        portName = list_adapter.selection[0].text
+    def open_port(self, portName):
         if not self.port or self.port.name != portName:
             if self.port:
                 self.port.close()

@@ -10,6 +10,8 @@ from keyboard import MidiKeyboard
 from musicplayer import MusicPlayer
 from tools import ROOT_DIR
 
+SETTINGS_FILE_NAME = 'settings.json'
+
 
 def midi_dict_args_converter(row_index, device_name):
     return {
@@ -27,8 +29,8 @@ class MidiScreen(Screen):
     kb = ObjectProperty(None)
 
     def __init__(self, **kw):
+        self.settings_dir = kw['settings_dir']
         super(MidiScreen, self).__init__(**kw)
-
 
     def on_kb(self, inst, value):
         # set up the midi device list
@@ -42,10 +44,14 @@ class MidiScreen(Screen):
         self.ids.midi_list_layout.add_widget(ListView(adapter=dict_adapter,
                                                       size_hint=(0.5, 0.8)))
 
-        dict_adapter.bind(on_selection_change=value.midi_in.open_port)
+        dict_adapter.bind(on_selection_change=value.midi_in.open_port_from_list)
 
     def on_enter(self):
         self.music_player.start()
 
     def on_pre_leave(self):
         self.music_player.stop()
+
+    def save(self):
+        pass
+
