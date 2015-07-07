@@ -135,7 +135,7 @@ class GraphMap(object):
             p0 = Coords(*verts[v1 if v1 != -1 else v2])
             if self.pointOutsideBounds(*p0):
                 # Add a dummy wall to keep the indexing the same
-                # walls.append((p0, p0))
+                walls[i] = (p0, p0)
                 continue
             # need to handle case where b is 0
             p1 = Coords(*constrain(p0, (-a / b) if b else (-a * float('inf')),

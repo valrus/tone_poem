@@ -4,8 +4,9 @@ from __future__ import print_function
 
 import json
 import os
-from itertools import chain
-from math import sqrt
+from functools import partial
+from itertools import chain, repeat
+from math import copysign, sqrt
 from random import gauss, choice
 
 from kivy.animation import Animation, AnimationTransition
@@ -28,7 +29,7 @@ from creature_widget import CreatureWidget
 from keyboard import MidiInputDispatcher
 from mingushelpers import is_note_on, is_note_off, notes_match
 from musicplayer import MusicPlayer
-from tools import Size, Quad, Rect, Coords, distance_squared
+from tools import Size, Quad, Rect, Coords, distance_squared, safe_divide
 from tools import ROOT_DIR, WINDOW_SIZE
 import map
 import map_label
@@ -222,6 +223,17 @@ class MapLabel(Label):
     pass
 
 
+# XXX: Unit test this SO MUCH
+def sort_counterclockwise(center, point):
+    return (copysign(-1, point.y - center.y),
+            -safe_divide(point.x - center.x, point.y - center.y))
+
+
+def get_triangular_indices(num_vertices):
+    vertices = range(num_vertices)
+    return list(chain(*list(chain(*zip(repeat([0]), zip(vertices[1:], vertices[2:]))))))
+
+
 class MapOverlay(RelativeLayout):
     vertex_format = [
         (b'vPosition', 2, 'float'),
@@ -246,16 +258,18 @@ class MapOverlay(RelativeLayout):
         self._meshes = []
 
     def draw_fog(self):
-        print(self.wall_dict[self.pc_loc])
-        print(len(self.wall_dict[self.pc_loc]))
-        verts = []
-        for v1, v2 in self.wall_dict[self.pc_loc]:
-            verts.extend([v1.x, v1.y, 0, 0, v2.x, v2.y, 0, 0])
-        print(verts)
+        sort_key = partial(sort_counterclockwise, self.pc_loc)
+        sorted_verts = sorted(set(chain(*self.wall_dict[self.pc_loc])),
+                           key=sort_key)
+        print(sorted_verts)
+        mesh_verts = []
+        for x, y in sorted_verts:
+            mesh_verts.extend([x, y, 0, 0])
+        print(mesh_verts)
         with self.canvas:
             self._meshes.append(Mesh(
-                indices=range(len(verts) // 4),
-                vertices=verts,
+                indices=get_triangular_indices(len(mesh_verts) // 4),
+                vertices=mesh_verts,
                 mode="triangles",
                 texture=self.texture
             ))

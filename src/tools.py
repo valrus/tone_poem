@@ -82,3 +82,9 @@ def bezier(v1, v2, steps=5):
         r2 += d2
     yield r2
 
+
+def safe_divide(numer, denom):
+    if denom == 0:
+        return (-1 if numer < 0 else 1) * float('inf')
+    else:
+        return numer / denom
