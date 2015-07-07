@@ -78,14 +78,14 @@ class UVData(object):
 
 class MapRenderer(EventDispatcher):
     ground_tile = None
-    overlay = ObjectProperty(None)
+    terrain = ObjectProperty(None)
     features = ObjectProperty(None)
 
     def draw_paths(self, paths):
         return
 
     def draw_walls(self, walls):
-        return 
+        return
 
 
 class SkeletronMapRenderer(MapRenderer):
@@ -104,9 +104,9 @@ class SkeletronMapRenderer(MapRenderer):
                      dash_offset=2, dash_length=2, width=1)
 
     def draw_walls(self, walls):
-        if not self.overlay:
+        if not self.terrain:
             return
-        with self.overlay.canvas:
+        with self.terrain.canvas:
             Color(1.0, 0, 0)
             for w1, w2 in walls:
                 print("Line", w1, w2)
@@ -169,6 +169,8 @@ class ForestMapRenderer(SkeletronMapRenderer):
         Dx, Dy = v2.x - v1.x, v2.y - v1.y
         sparsity = 20.0
         density = sqrt(distance_squared(v1, v2)) / sparsity
+        if not density:
+            return
         dy, dx = Dy / density, Dx / density
         x, y = v1
         x_going_right = (dx > 0)
@@ -186,10 +188,10 @@ class ForestMapRenderer(SkeletronMapRenderer):
             x, y = x + dx, y + dy
 
     def draw_walls(self, walls):
-        if not self.overlay:
+        if not self.terrain:
             return
         verts, indices = [], []
-        with self.overlay.canvas:
+        with self.terrain.canvas:
             for wall in walls:
                 self._get_tree_line(wall, verts, indices)
             # NB: Max vertices length is 65535. Might need multiple meshes.
@@ -221,9 +223,48 @@ class MapLabel(Label):
 
 
 class MapOverlay(RelativeLayout):
+    vertex_format = [
+        (b'vPosition', 2, 'float'),
+        (b'vTexCoords0', 2, 'float'),
+        (b'vRotation', 1, 'float'),
+        (b'vCenter', 2, 'float')
+    ]
+
+    def __init__(self, pc_loc, wall_dict, **kw):
+        self.pc_loc = pc_loc
+        self.wall_dict = wall_dict
+        super(MapOverlay, self).__init__(**kw)
+        self.texture = Texture.create(size=(1, 1), colorfmt='rgba')
+        self.texture.wrap = "repeat"
+        # make a lil black pixel
+        buf = b'\x00'
+        # then blit the buffer
+        self.texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
+        self.uvsize = (1, 1)
+        # self.custom_shader = os.path.join(ROOT_DIR, "multiquad.glsl")
+        self.custom_shader = None
+        self._meshes = []
+
+    def draw_fog(self):
+        print(self.wall_dict[self.pc_loc])
+        print(len(self.wall_dict[self.pc_loc]))
+        verts = []
+        for v1, v2 in self.wall_dict[self.pc_loc]:
+            verts.extend([v1.x, v1.y, 0, 0, v2.x, v2.y, 0, 0])
+        print(verts)
+        with self.canvas:
+            self._meshes.append(Mesh(
+                indices=range(len(verts) // 4),
+                vertices=verts,
+                mode="triangles",
+                texture=self.texture
+            ))
+
+
+class MapTerrain(RelativeLayout):
     def __init__(self, **kw):
         renderer = kw.pop("renderer", None)
-        super(MapOverlay, self).__init__(**kw)
+        super(MapTerrain, self).__init__(**kw)
         if renderer:
             self.canvas = RenderContext(use_parent_projection=True)
             if renderer.custom_shader:
@@ -282,6 +323,7 @@ def getNavigationWidgets(start, graph_map, edges):
 
 class AreaScreen(Screen):
     overlay = ObjectProperty(None)
+    terrain = ObjectProperty(None)
     features = ObjectProperty(None)
     renderer = ObjectProperty(None)
     midi_in = ObjectProperty(None)
@@ -296,18 +338,20 @@ class AreaScreen(Screen):
         self.pc_loc = choice(self.vertices_pos)
         self.nav_widgets = []
         super(AreaScreen, self).__init__(**kw)
-        self.overlay = MapOverlay(renderer=self.renderer)
-        self.add_widget(self.overlay)
+        self.terrain = MapTerrain(renderer=self.renderer)
+        self.add_widget(self.terrain)
         self.features = MapFeatures(renderer=self.renderer)
         self.add_widget(self.features)
+        self.overlay = MapOverlay(self.pc_loc, self.map.wall_dict)
+        self.add_widget(self.overlay)
         self.ear = NoteCollector()
 
     def on_midi_in(self, instance, value):
         value.watchers.add(self)
         self.register_event_type('on_midi')
 
-    def on_overlay(self, instance, value):
-        self.renderer.overlay = value
+    def on_terrain(self, instance, value):
+        self.renderer.terrain = value
         self.draw_walls()
 
     def on_features(self, instance, value):
@@ -316,6 +360,9 @@ class AreaScreen(Screen):
         value.add_pc(self.pc, self.pc_loc)
         self.draw_edges()
         self.resetNavigationWidgets()
+
+    def on_overlay(self, instance, value):
+        value.draw_fog()
 
     def resetNavigationWidgets(self, *args):
         """Set up labels describing how to move the PC.
@@ -355,6 +402,7 @@ class AreaScreen(Screen):
         ])
 
     def draw_walls(self):
+        actual_walls = [w for w in self.map.walls if w]
         self.renderer.draw_walls([[Coords(*v1), Coords(*v2)]
-                                  for v1, v2 in self.map.walls])
+                                  for v1, v2 in actual_walls])
 

@@ -7,7 +7,7 @@ import networkx as nx
 
 from poisson.poisson_disk import sample_poisson_uniform
 from tools import Coords, Size, WINDOW_SIZE, distance_squared
-from voronoi import computeDelaunayTriangulation, computeVoronoiDiagram
+from voronoi import computeDelaunayTriangulation, SiteList, Context, voronoi
 
 LONG_DISTANCE = 300
 
@@ -83,7 +83,7 @@ class GraphMap(object):
                  (points[secondIndex], points[firstIndex])]
                 for firstIndex, secondIndex in combinations(triangle, 2)
             ]))
-        self.walls = self.computeWalls()
+        self.walls, self.wall_dict = self.computeWalls()
         self.removeMultiWallEdges()
         dist_squared = self.min_distance ** 2
         for e in self.graph.edges():
@@ -96,6 +96,8 @@ class GraphMap(object):
         for edge in self.graph.edges():
             crossings = 0
             for wall in self.walls:
+                if wall is None:
+                    continue
                 crossings += intersect(edge, wall)
                 if crossings > 1:
                     self.graph.remove_edge(*edge)
@@ -105,13 +107,23 @@ class GraphMap(object):
         return any([x < 0, x > self.dims.w, y < 0, y > self.dims.h])
 
     def computeWalls(self):
-        walls = []
-        verts, abcs, edges = computeVoronoiDiagram(self.graph.nodes())
+        nodes = self.graph.nodes()
+
+        # Poached from voronoi.computeVoronoiDiagram
+        # http://stackoverflow.com/questions/9441007/how-can-i-get-a-dictionary-of-cells-from-this-voronoi-diagram-data
+        site_list = SiteList(nodes)
+        context = Context()
+        voronoi(site_list, context)
+        verts, abcs, edges = context.vertices, context.lines, context.edges
+        walls = [None for _ in edges]
+        # walls = []
+
         for i, v1, v2 in edges:
             if all(v != -1 and not self.pointOutsideBounds(*verts[v])
                    for v in (v1, v2)):
                 # edge has a vertex at either end, easy
-                walls.append((Coords(*verts[v1]), Coords(*verts[v2])))
+                walls[i] = (Coords(*verts[v1]), Coords(*verts[v2]))
+                # walls.append((Coords(*verts[v1]), Coords(*verts[v2])))
                 continue
             if self.pointOutsideBounds(*verts[v1]):
                 v1 = -1
@@ -120,14 +132,23 @@ class GraphMap(object):
             # apparently v1, v2 go left to right
             # calculate an edge point using slope = -a/b
             a, b, _ = abcs[i]
-            p0 = verts[v1 if v1 != -1 else v2]
+            p0 = Coords(*verts[v1 if v1 != -1 else v2])
             if self.pointOutsideBounds(*p0):
+                # Add a dummy wall to keep the indexing the same
+                # walls.append((p0, p0))
                 continue
             # need to handle case where b is 0
-            p1 = constrain(p0, (-a / b) if b else (-a * float('inf')),
-                           self.dims, rightward=(v1 != -1))
-            walls.append((p0, p1))
-        return walls
+            p1 = Coords(*constrain(p0, (-a / b) if b else (-a * float('inf')),
+                        self.dims, rightward=(v1 != -1)))
+            walls[i] = (p0, p1)
+            # walls.append((p0, p1))
+
+        wall_dict = dict()
+        for site, edge_list in context.polygons.items():
+            wall_dict[nodes[site]] = [walls[i] for i, _, _ in edge_list
+                                      if walls[i] is not None]
+
+        return walls, wall_dict
 
     def neighbors(self, node):
         return self.graph.neighbors(node)

@@ -6,7 +6,7 @@ Size = namedtuple("Size", "w h")
 Rect = namedtuple("Rect", "x y w h")
 Quad = namedtuple("Quad", "x1 y1 x2 y2")
 
-WINDOW_SIZE = Size(1200, 800)
+WINDOW_SIZE = Size(1600, 900)
 
 ROOT_DIR = os.path.dirname(__file__)
 
