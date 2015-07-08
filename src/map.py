@@ -141,7 +141,6 @@ class GraphMap(object):
             p1 = Coords(*constrain(p0, (-a / b) if b else (-a * float('inf')),
                         self.dims, rightward=(v1 != -1)))
             walls[i] = (p0, p1)
-            # walls.append((p0, p1))
 
         wall_dict = dict()
         for site, edge_list in context.polygons.items():
