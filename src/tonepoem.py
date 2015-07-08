@@ -131,9 +131,11 @@ class TonePoemApp(App):
 
 
 if __name__ == '__main__':
-    if DEBUG:
+    if DEBUG is True:
         seed = random.randint(0, sys.maxsize)
         print('Random seed is {}'.format(seed))
         random.seed(seed)
+    elif DEBUG:
+        random.seed(DEBUG)
     TonePoemApp().run()
     sys.exit(1)  # so that emacs will keep the compilation window open
