@@ -261,6 +261,8 @@ class MapOverlay(RelativeLayout):
         sort_key = partial(sort_counterclockwise, self.pc_loc)
         sorted_verts = sorted(set(chain(*self.wall_dict[self.pc_loc])),
                            key=sort_key)
+        if any(v.x == 0 for v in sorted_verts) and any(v.y == 0 for v in sorted_verts):
+            sorted_verts.append(Coords(0, 0))
         print(sorted_verts)
         mesh_verts = []
         for x, y in sorted_verts:
