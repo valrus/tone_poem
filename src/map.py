@@ -116,14 +116,12 @@ class GraphMap(object):
         voronoi(site_list, context)
         verts, abcs, edges = context.vertices, context.lines, context.edges
         walls = [None for _ in edges]
-        # walls = []
 
         for i, v1, v2 in edges:
             if all(v != -1 and not self.pointOutsideBounds(*verts[v])
                    for v in (v1, v2)):
                 # edge has a vertex at either end, easy
                 walls[i] = (Coords(*verts[v1]), Coords(*verts[v2]))
-                # walls.append((Coords(*verts[v1]), Coords(*verts[v2])))
                 continue
             if self.pointOutsideBounds(*verts[v1]):
                 v1 = -1
@@ -134,8 +132,6 @@ class GraphMap(object):
             a, b, _ = abcs[i]
             p0 = Coords(*verts[v1 if v1 != -1 else v2])
             if self.pointOutsideBounds(*p0):
-                # Add a dummy wall to keep the indexing the same
-                walls[i] = (p0, p0)
                 continue
             # need to handle case where b is 0
             p1 = Coords(*constrain(p0, (-a / b) if b else (-a * float('inf')),
