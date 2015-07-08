@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import os
+import random
 import sys
 from collections import OrderedDict
 
@@ -130,5 +131,9 @@ class TonePoemApp(App):
 
 
 if __name__ == '__main__':
+    if DEBUG:
+        seed = random.randint(0, sys.maxsize)
+        print('Random seed is {}'.format(seed))
+        random.seed(seed)
     TonePoemApp().run()
     sys.exit(1)  # so that emacs will keep the compilation window open
