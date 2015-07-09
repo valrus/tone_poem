@@ -246,6 +246,7 @@ def get_corner_vert(verts):
 
 
 class MapOverlay(RelativeLayout):
+    dark_vertices = ObjectProperty(None)
     vertex_format = [
         (b'vPosition', 2, 'float'),
         (b'vTexCoords0', 2, 'float'),
@@ -265,9 +266,9 @@ class MapOverlay(RelativeLayout):
         self.uvsize = (1, 1)
         # self.custom_shader = os.path.join(ROOT_DIR, "multiquad.glsl")
         self.custom_shader = None
-        self._meshes = []
+        self.widgets = dict()
 
-    def draw_fog(self):
+    def setup_fog(self):
         for vertex, walls in self.wall_dict.items():
             sort_key = partial(sort_counterclockwise, vertex)
             verts = set(chain(*walls))
@@ -278,13 +279,25 @@ class MapOverlay(RelativeLayout):
             mesh_verts = []
             for x, y in sorted_verts:
                 mesh_verts.extend([x, y, 0, 0])
-            with self.canvas:
-                self._meshes.append(Mesh(
-                    indices=get_triangular_indices(len(mesh_verts) // 4),
-                    vertices=mesh_verts,
-                    mode="triangles",
-                    texture=self.texture
-                ))
+            shade_widget = Widget(
+                size=WINDOW_SIZE,
+                size_hint=(None, None),
+            )
+            with shade_widget.canvas:
+                Mesh(indices=get_triangular_indices(len(mesh_verts) // 4),
+                     vertices=mesh_verts,
+                     mode="triangles",
+                     texture=self.texture)
+            self.add_widget(shade_widget)
+            self.widgets[vertex] = shade_widget
+
+    def reveal(self, vertex, *args):
+        print('Revealing vertex {}'.format(vertex))
+        anim = Animation(
+            opacity=0,
+            duration=0.5,
+            transition=AnimationTransition.in_out_quad)
+        anim.start(self.widgets[vertex])
 
 
 class MapTerrain(RelativeLayout):
@@ -331,7 +344,6 @@ def getNavigationWidgets(start, graph_map, edges):
         label = MapLabel(text=label_text,
                          font_name='fonts/DejaVuSans.ttf',
                          size=(50, 50),
-                         center=label_center,
                          size_hint=(None, None))
         label.center = label_center
         widgets.append(label)
@@ -388,7 +400,7 @@ class AreaScreen(Screen):
         self.resetNavigationWidgets()
 
     def on_overlay(self, instance, value):
-        value.draw_fog()
+        value.setup_fog()
 
     def resetNavigationWidgets(self, *args):
         """Set up labels describing how to move the PC.
@@ -417,6 +429,7 @@ class AreaScreen(Screen):
                     duration=0.5,
                     transition=AnimationTransition.in_out_quad)
                 anim.on_complete = self.resetNavigationWidgets
+                anim.on_start = partial(self.overlay.reveal, self.pc_loc)
                 anim.start(self.features.pcWidget)
 
     def draw_edges(self):
