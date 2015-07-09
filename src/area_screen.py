@@ -268,7 +268,9 @@ class MapOverlay(RelativeLayout):
         self.custom_shader = None
         self.widgets = dict()
 
-    def setup_fog(self):
+    def setup_fog(self, clear=None):
+        if clear is None:
+            clear = set()
         for vertex, walls in self.wall_dict.items():
             sort_key = partial(sort_counterclockwise, vertex)
             verts = set(chain(*walls))
@@ -283,6 +285,8 @@ class MapOverlay(RelativeLayout):
                 size=WINDOW_SIZE,
                 size_hint=(None, None),
             )
+            if vertex in clear:
+                shade_widget.opacity = 0
             with shade_widget.canvas:
                 Mesh(indices=get_triangular_indices(len(mesh_verts) // 4),
                      vertices=mesh_verts,
@@ -400,7 +404,7 @@ class AreaScreen(Screen):
         self.resetNavigationWidgets()
 
     def on_overlay(self, instance, value):
-        value.setup_fog()
+        value.setup_fog(clear={self.pc_loc})
 
     def resetNavigationWidgets(self, *args):
         """Set up labels describing how to move the PC.
