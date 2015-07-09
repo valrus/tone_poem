@@ -234,6 +234,17 @@ def get_triangular_indices(num_vertices):
     return list(chain(*list(chain(*zip(repeat([0]), zip(vertices[1:], vertices[2:]))))))
 
 
+def get_corner_vert(verts):
+    corner_vert = [None, None]
+    for v in verts:
+        if v.x <= 0 or v.x >= WINDOW_SIZE.w:
+            corner_vert[0] = v.x
+        if v.y <= 0 or v.y >= WINDOW_SIZE.h:
+            corner_vert[1] = v.y
+    if all(c is not None for c in corner_vert):
+        return corner_vert
+
+
 class MapOverlay(RelativeLayout):
     vertex_format = [
         (b'vPosition', 2, 'float'),
@@ -242,8 +253,7 @@ class MapOverlay(RelativeLayout):
         (b'vCenter', 2, 'float')
     ]
 
-    def __init__(self, pc_loc, wall_dict, **kw):
-        self.pc_loc = pc_loc
+    def __init__(self, wall_dict, **kw):
         self.wall_dict = wall_dict
         super(MapOverlay, self).__init__(**kw)
         self.texture = Texture.create(size=(1, 1), colorfmt='rgba')
@@ -258,23 +268,23 @@ class MapOverlay(RelativeLayout):
         self._meshes = []
 
     def draw_fog(self):
-        sort_key = partial(sort_counterclockwise, self.pc_loc)
-        sorted_verts = sorted(set(chain(*self.wall_dict[self.pc_loc])),
-                           key=sort_key)
-        if any(v.x == 0 for v in sorted_verts) and any(v.y == 0 for v in sorted_verts):
-            sorted_verts.append(Coords(0, 0))
-        print(sorted_verts)
-        mesh_verts = []
-        for x, y in sorted_verts:
-            mesh_verts.extend([x, y, 0, 0])
-        print(mesh_verts)
-        with self.canvas:
-            self._meshes.append(Mesh(
-                indices=get_triangular_indices(len(mesh_verts) // 4),
-                vertices=mesh_verts,
-                mode="triangles",
-                texture=self.texture
-            ))
+        for vertex, walls in self.wall_dict.items():
+            sort_key = partial(sort_counterclockwise, vertex)
+            verts = set(chain(*walls))
+            corner_vert = get_corner_vert(verts)
+            if corner_vert:
+                verts.add(Coords(*corner_vert))
+            sorted_verts = sorted(verts, key=sort_key)
+            mesh_verts = []
+            for x, y in sorted_verts:
+                mesh_verts.extend([x, y, 0, 0])
+            with self.canvas:
+                self._meshes.append(Mesh(
+                    indices=get_triangular_indices(len(mesh_verts) // 4),
+                    vertices=mesh_verts,
+                    mode="triangles",
+                    texture=self.texture
+                ))
 
 
 class MapTerrain(RelativeLayout):
@@ -358,7 +368,7 @@ class AreaScreen(Screen):
         self.add_widget(self.terrain)
         self.features = MapFeatures(renderer=self.renderer)
         self.add_widget(self.features)
-        self.overlay = MapOverlay(self.pc_loc, self.map.wall_dict)
+        self.overlay = MapOverlay(self.map.wall_dict)
         self.add_widget(self.overlay)
         self.ear = NoteCollector()
 
