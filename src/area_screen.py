@@ -6,7 +6,7 @@ import json
 import os
 from functools import partial
 from itertools import chain, repeat
-from math import copysign, sqrt
+from math import copysign, sqrt, cos, sin, pi
 from random import gauss, choice
 
 from kivy.animation import Animation, AnimationTransition
@@ -14,7 +14,7 @@ from kivy.core.image import Image
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Line, Mesh, Rectangle, RenderContext
 from kivy.graphics.texture import Texture
-from kivy.properties import ObjectProperty, BooleanProperty
+from kivy.properties import ObjectProperty, BooleanProperty, ListProperty
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.anchorlayout import AnchorLayout
@@ -199,8 +199,8 @@ class ForestMapRenderer(SkeletronMapRenderer):
             self.wall_meshes.append(Mesh(
                 indices=indices,
                 vertices=chain(*sorted(verts, key=lambda i: -i[6])),
-                fmt=self.__class__.vertex_format,
                 mode="triangles",
+                fmt=self.__class__.vertex_format,
                 texture=self.__class__.sprites.texture(self.__class__.wall_page)
             ))
 
@@ -245,32 +245,24 @@ def get_corner_vert(verts):
         return corner_vert
 
 
-class MapOverlay(RelativeLayout):
-    dark_vertices = ObjectProperty(None)
-    vertex_format = [
-        (b'vPosition', 2, 'float'),
-        (b'vTexCoords0', 2, 'float'),
-        (b'vRotation', 1, 'float'),
-        (b'vCenter', 2, 'float')
-    ]
+class MapTile(Widget):
+    texture = Image(os.path.join("sprites", "light.png")).texture
+    mesh_verts = ListProperty([])
+    mesh_indices = ListProperty([])
+    shade_color = ListProperty([])
 
+
+class MapOverlay(RelativeLayout):
     def __init__(self, wall_dict, **kw):
         self.wall_dict = wall_dict
         super(MapOverlay, self).__init__(**kw)
-        self.texture = Texture.create(size=(1, 1), colorfmt='rgba')
-        self.texture.wrap = "repeat"
-        # make a lil black pixel
-        buf = b'\x00'
-        # then blit the buffer
-        self.texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
-        self.uvsize = (1, 1)
-        # self.custom_shader = os.path.join(ROOT_DIR, "multiquad.glsl")
-        self.custom_shader = None
         self.widgets = dict()
+        self.clear = set()
 
     def setup_fog(self, clear=None):
         if clear is None:
-            clear = set()
+            self.clear = set()
+        self.clear = clear
         for vertex, walls in self.wall_dict.items():
             sort_key = partial(sort_counterclockwise, vertex)
             verts = set(chain(*walls))
@@ -279,29 +271,26 @@ class MapOverlay(RelativeLayout):
                 verts.add(Coords(*corner_vert))
             sorted_verts = sorted(verts, key=sort_key)
             mesh_verts = []
-            for x, y in sorted_verts:
-                mesh_verts.extend([x, y, 0, 0])
-            shade_widget = Widget(
-                size=WINDOW_SIZE,
-                size_hint=(None, None),
+            for i, (x, y) in enumerate(sorted_verts):
+                mesh_verts.extend([x, y,
+                                   0.5 + 0.5 * cos(2 * pi * i / len(sorted_verts)),
+                                   0.5 + 0.5 * sin(2 * pi * i / len(sorted_verts))])
+            shade_widget = MapTile(
+                mesh_indices=get_triangular_indices(len(mesh_verts) // 4),
+                mesh_verts=mesh_verts,
+                shade_color=(0.0, 0.0, 0.0, 0.0 if vertex in clear else 1.0)
             )
-            if vertex in clear:
-                shade_widget.opacity = 0
-            with shade_widget.canvas:
-                Mesh(indices=get_triangular_indices(len(mesh_verts) // 4),
-                     vertices=mesh_verts,
-                     mode="triangles",
-                     texture=self.texture)
             self.add_widget(shade_widget)
             self.widgets[vertex] = shade_widget
 
     def reveal(self, vertex, *args):
         print('Revealing vertex {}'.format(vertex))
         anim = Animation(
-            opacity=0,
+            shade_color=(0, 0, 0, 0),
             duration=0.5,
             transition=AnimationTransition.in_out_quad)
         anim.start(self.widgets[vertex])
+        self.clear.add(vertex)
 
 
 class MapTerrain(RelativeLayout):
@@ -416,7 +405,7 @@ class AreaScreen(Screen):
         del self.nav_widgets[:]
         self.nav_widgets = getNavigationWidgets(self.pc_loc, self.map, self.map.edges([self.pc_loc]))
         for w in self.nav_widgets:
-            print("adding widget", w.text, "with center", w.center)
+            # print("adding widget", w.text, "with center", w.center)
             self.features.add_widget(w)
 
     def on_midi(self, msg):

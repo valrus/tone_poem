@@ -36,10 +36,29 @@
     center: self.center_coords
 
 
+<MapTile>:
+    color: (0, 0, 0, 1)
+    size_hint: None, None
+    size: tuple(WINDOW_SIZE)
+    canvas:
+        Mesh:
+            vertices: self.mesh_verts
+            indices: self.mesh_indices
+            mode: 'triangles'
+            texture: self.__class__.texture
+        Color:
+            rgba: self.shade_color
+        Mesh:
+            vertices: self.mesh_verts
+            indices: self.mesh_indices
+            mode: 'triangles'
+
+
 <MapOverlay>:
     size_hint: None, None
     size: tuple(WINDOW_SIZE)
     pos: 0, 0
+    opacity: 1.0
 
 
 <CreatureWidget>:
