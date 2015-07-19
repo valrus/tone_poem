@@ -251,6 +251,12 @@ class MapTile(Widget):
     mesh_indices = ListProperty([])
     shade_color = ListProperty([])
 
+    def __init__(self, **kw):
+        self.canvas = RenderContext(use_parent_projection=True,
+                                    use_parent_modelview=True)
+        self.canvas.shader.source = os.path.join(ROOT_DIR, "fogbox.glsl")
+        super(MapTile, self).__init__(**kw)
+
 
 class MapOverlay(RelativeLayout):
     def __init__(self, wall_dict, **kw):
@@ -296,11 +302,11 @@ class MapOverlay(RelativeLayout):
 class MapTerrain(RelativeLayout):
     def __init__(self, **kw):
         renderer = kw.pop("renderer", None)
-        super(MapTerrain, self).__init__(**kw)
         if renderer:
             self.canvas = RenderContext(use_parent_projection=True)
             if renderer.custom_shader:
                 self.canvas.shader.source = renderer.custom_shader
+        super(MapTerrain, self).__init__(**kw)
 
 
 class MapFeatures(RelativeLayout):
