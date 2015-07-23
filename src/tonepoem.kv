@@ -41,11 +41,6 @@
     size_hint: None, None
     size: tuple(WINDOW_SIZE)
     canvas:
-        Mesh:
-            vertices: self.mesh_verts
-            indices: self.mesh_indices
-            mode: 'triangles'
-            texture: self.__class__.texture
         Color:
             rgba: self.shade_color
         Mesh:

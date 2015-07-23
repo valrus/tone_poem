@@ -29,7 +29,7 @@ from creature_widget import CreatureWidget
 from keyboard import MidiInputDispatcher
 from mingushelpers import is_note_on, is_note_off, notes_match
 from musicplayer import MusicPlayer
-from tools import Size, Quad, Rect, Coords, distance_squared, safe_divide
+from tools import Size, Quad, Rect, Coords, distance_squared, safe_divide, point_to_line
 from tools import ROOT_DIR, WINDOW_SIZE
 import map
 import map_label
@@ -254,6 +254,11 @@ class MapTile(Widget):
     def __init__(self, **kw):
         self.canvas = RenderContext(use_parent_projection=True,
                                     use_parent_modelview=True)
+        self.canvas['corners'] = [[float(x) for x in v]
+                                  for v in kw['corners']]
+        self.canvas['fNumSides'] = float(len(kw['corners']))
+        self.canvas['centerCoords'] = [float(x) for x in kw['centerCoords']]
+        self.canvas['resolution'] = [float(x) for x in WINDOW_SIZE]
         self.canvas.shader.source = os.path.join(ROOT_DIR, "fogbox.glsl")
         super(MapTile, self).__init__(**kw)
 
@@ -281,10 +286,15 @@ class MapOverlay(RelativeLayout):
                 mesh_verts.extend([x, y,
                                    0.5 + 0.5 * cos(2 * pi * i / len(sorted_verts)),
                                    0.5 + 0.5 * sin(2 * pi * i / len(sorted_verts))])
+            print(vertex, sorted_verts)
+            print(point_to_line(vertex, sorted_verts[0], sorted_verts[1]))
             shade_widget = MapTile(
                 mesh_indices=get_triangular_indices(len(mesh_verts) // 4),
                 mesh_verts=mesh_verts,
-                shade_color=(0.0, 0.0, 0.0, 0.0 if vertex in clear else 1.0)
+                shade_color=(0.0, 0.0, 0.0, 0.0 if vertex in clear else 1.0),
+                corners=sorted_verts,
+                centerCoords=vertex,
+                opacity=1.0
             )
             self.add_widget(shade_widget)
             self.widgets[vertex] = shade_widget
@@ -293,8 +303,9 @@ class MapOverlay(RelativeLayout):
         print('Revealing vertex {}'.format(vertex))
         anim = Animation(
             shade_color=(0, 0, 0, 0),
-            duration=0.5,
-            transition=AnimationTransition.in_out_quad)
+            duration=1.0,
+            transition=AnimationTransition.in_out_quad,
+        )
         anim.start(self.widgets[vertex])
         self.clear.add(vertex)
 

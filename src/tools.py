@@ -83,6 +83,15 @@ def bezier(v1, v2, steps=5):
     yield r2
 
 
+def point_to_line(p0, p1, p2):
+    rise = p2.y - p1.y
+    run = p2.x - p1.x
+    return (
+        abs(rise * p0.x - run * p0.y + p2.x * p1.y - p2.y * p1.x)
+        / sqrt(rise * rise + run * run)
+    )
+
+
 def safe_divide(numer, denom):
     if denom == 0:
         return (-1 if numer < 0 else 1) * float('inf')

@@ -14,6 +14,7 @@ kivy.require('1.1.2')
 from kivy.config import Config
 Config.set('graphics', 'width', WINDOW_SIZE.w)
 Config.set('graphics', 'height', WINDOW_SIZE.h)
+Config.set('kivy', 'log_level', 'debug')
 
 from kivy.app import App
 from kivy.core.window import Window

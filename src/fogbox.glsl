@@ -24,8 +24,8 @@ void main(void) {
     /*
     tex_coord0 = vec2(256.0 + 256.0 * cos(2.0 * pi * vertexNum / numVertices),
                       256.0 + 256.0 * sin(2.0 * pi * vertexNum / numVertices));
-    */
     tex_coord0 = vTexCoords0;
+    */
     gl_Position = projection_mat * modelview_mat * vec4(vPosition.xy, 0.0, 1.0);
 }
 
@@ -36,11 +36,40 @@ precision highp float;
 
 /* Outputs from the vertex shader */
 varying vec4 frag_color;
-varying vec2 tex_coord0;
 
 /* uniform texture samplers */
-uniform sampler2D texture0;
+// uniform sampler2D  texture0;
+uniform vec2       corners[12];
+uniform float      fNumSides;
+uniform vec2       centerCoords;
+uniform vec2       resolution;
+
+float pointToLine(vec2 p0, vec2 p1, vec2 p2) {
+    /* https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points */
+    float rise = p2.y - p1.y;
+    float run = p2.x - p1.x;
+    return abs(rise * p0.x - run * p0.y + p2.x * p1.y - p2.y * p1.x) / sqrt(rise * rise + run * run);
+}
 
 void main(void) {
-    gl_FragColor = frag_color * texture2D(texture0, tex_coord0);
+    int numSides = int(fNumSides);
+    vec2 cPos = gl_FragCoord.xy;
+    float minDistance;
+    float maxDistance;
+    minDistance = pointToLine(cPos, corners[0], corners[numSides - 1]);
+    for (int i = 0; i < numSides - 1; i++) {
+        float dist = pointToLine(cPos, corners[i], corners[i + 1]);
+        if (dist < minDistance) {
+            minDistance = dist;
+            maxDistance = pointToLine(centerCoords, corners[i], corners[i + 1]);
+        }
+    }
+    float alpha = 1. - (minDistance / maxDistance);
+    gl_FragColor = vec4(frag_color.r,
+                        frag_color.g,
+                        frag_color.b,
+                        min(frag_color.a + alpha, 1.0));
+    // gl_FragColor = vec4(frag_color.rgb, centerCoords.y * frag_color.a);
+    // gl_FragColor.a = minDistance / maxDistance;
+    // gl_FragColor.a = 0.5;
 }
