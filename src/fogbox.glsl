@@ -54,22 +54,20 @@ float pointToLine(vec2 p0, vec2 p1, vec2 p2) {
 void main(void) {
     int numSides = int(fNumSides);
     vec2 cPos = gl_FragCoord.xy;
-    float minDistance;
-    float maxDistance;
-    minDistance = pointToLine(cPos, corners[0], corners[numSides - 1]);
+    float centerDistance = distance(cPos, centerCoords);
+
+    // calculate the distance from the point to the closest edge
+    float edgeDistance = pointToLine(cPos, corners[0], corners[numSides - 1]);
     for (int i = 0; i < numSides - 1; i++) {
         float dist = pointToLine(cPos, corners[i], corners[i + 1]);
-        if (dist < minDistance) {
-            minDistance = dist;
-            maxDistance = pointToLine(centerCoords, corners[i], corners[i + 1]);
+        if (dist < edgeDistance) {
+            edgeDistance = dist;
         }
     }
-    float alpha = 1. - (minDistance / maxDistance);
+
+    float alpha = centerDistance / (centerDistance + edgeDistance);
     gl_FragColor = vec4(frag_color.r,
                         frag_color.g,
                         frag_color.b,
                         min(frag_color.a + alpha, 1.0));
-    // gl_FragColor = vec4(frag_color.rgb, centerCoords.y * frag_color.a);
-    // gl_FragColor.a = minDistance / maxDistance;
-    // gl_FragColor.a = 0.5;
 }
