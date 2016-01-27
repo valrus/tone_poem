@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+from itertools import chain
 from math import sqrt
 
 Size = namedtuple("Size", "w h")
@@ -61,6 +62,45 @@ def sandwich(min, x, max):
         return max
     else:
         return x
+
+
+def intersect(s1, s2):
+    """Determine if two line segments intersect.
+
+    s1 and s2 should be pairs of Coords.
+    """
+    # http://tinyurl.com/l2jcpj8
+    a1, b1, a2, b2 = chain(s1, s2)
+    x1, y1, x2, y2 = chain(a1, a2)
+    dx1, dy1, dx2, dy2 = b1.x - x1, b1.y - y1, b2.x - x2, b2.y - y2
+    vp = dx1 * dy2 - dx2 * dy1
+    if vp == 0:
+        return 0
+    vx, vy = x2 - x1, y2 - y1
+    return 1 if all([0 < (vx * dy2 - vy * dx2) / vp < 1,
+                     0 < (vx * dy1 - vy * dx1) / vp < 1]) else 0
+
+
+def vertices_to_edge(*verts):
+    """Convert 2 vertices to a 4-float list."""
+    return [float(x) for x in chain(*verts)]
+
+
+def vertices_to_edges(verts):
+    """Convert a list of vertices of a polygon to a list of edges of same.
+
+    The output is in the form of a list of 4-float lists,
+    suitable for passing to glsl as vec4s.
+    """
+    return (
+        [vertices_to_edge(verts[-1], verts[0])]
+        + [vertices_to_edge(*pair) for pair in pairs(verts)]
+    )
+
+
+def pairs(lst):
+    """Get a list of pairs of adjacent elements in a list."""
+    return zip(lst, lst[1:])
 
 
 def group(lst, n):

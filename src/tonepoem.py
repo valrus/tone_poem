@@ -63,10 +63,10 @@ class TonePoemGame(ScreenManager):
     def _on_kb_down(self, kb, keycode, text, modifiers):
         if keycode[1] == 'left' and self.screen_index != 0:
             self.screen_index -= 1
-            self._switch_screens(self.screen_index, direction="right")
-        elif keycode[1] == 'right' and self.screen_index != len(self.screen_dict):
+            self._switch_screens(self.screen_index, direction='right')
+        elif keycode[1] == 'right' and self.screen_index < len(self.screen_dict):
             self.screen_index += 1
-            self._switch_screens(self.screen_index, direction="left")
+            self._switch_screens(self.screen_index, direction='left')
         else:
             print(keycode)
             return False

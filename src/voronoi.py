@@ -110,6 +110,7 @@ class Context(object):
         self.triangulate = False
         self.vertices  = []    # list of vertex 2-tuples: (x,y)
         self.lines     = []    # equation of line 3-tuple (a b c), for the equation of the line a*x+b*y = c
+        self.bisectors = []    # (site, site) pairs corresponding to lines
         self.edges     = []    # edge 3-tuple: (line index, vertex 1 index, vertex 2 index)   if either vertex index is -1, the edge extends to infiinity
         self.triangles = []    # 3-tuple of vertex indices
         self.polygons  = {}    # a dict of site:[edges] pairs
@@ -149,8 +150,10 @@ class Context(object):
         elif(self.triangulate and self.doPrint and not self.plot):
             print("%d %d %d" % (s1.sitenum, s2.sitenum, s3.sitenum))
 
-    def outBisector(self,edge):
+    def outBisector(self,edge,sitePair):
         self.lines.append((edge.a, edge.b, edge.c))
+        site1, site2 = sitePair
+        self.bisectors.append(((site1.x, site1.y), (site2.x, site2.y)))
         if(self.debug):
             print("line(%d) %gx+%gy=%g, bisecting %d %d" % (edge.edgenum, edge.a, edge.b, edge.c, edge.reg[0].sitenum, edge.reg[1].sitenum))
         elif(self.triangulate):
@@ -208,7 +211,7 @@ def voronoi(siteList,context):
               # create a new edge that bisects
               bot  = lbnd.rightreg(bottomsite)
               edge = Edge.bisect(bot,newsite)
-              context.outBisector(edge)
+              context.outBisector(edge, (bot, newsite))
 
               # create a new Halfedge, setting its pm field to 0 and insert
               # this new bisector edge between the left and right vectors in
@@ -255,7 +258,8 @@ def voronoi(siteList,context):
 
               # output the triple of sites, stating that a circle goes through them
               mid = lbnd.rightreg(bottomsite)
-              context.outTriple(bot,top,mid)
+              triangle = (bot, top, mid)
+              context.outTriple(*triangle)
 
               # get the vertex that caused this event and set the vertex number
               # couldn't do this earlier since we didn't know when it would be processed
@@ -288,7 +292,7 @@ def voronoi(siteList,context):
               # Create an Edge (or line) that is between the two Sites.  This
               # creates the formula of the line, and assigns a line number to it
               edge = Edge.bisect(bot, top)
-              context.outBisector(edge)
+              context.outBisector(edge, (bot, top))
 
               # create a HE from the edge
               bisector = Halfedge(edge, pm)

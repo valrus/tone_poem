@@ -1,28 +1,18 @@
 from __future__ import division
 
+from collections import namedtuple
 from math import floor
 from itertools import chain, combinations
 
 import networkx as nx
 
 from poisson.poisson_disk import sample_poisson_uniform
-from tools import Coords, Size, WINDOW_SIZE, distance_squared
+from tools import Coords, Size, WINDOW_SIZE, distance_squared, intersect
 from voronoi import computeDelaunayTriangulation, SiteList, Context, voronoi
 
 LONG_DISTANCE = 300
 
-
-def intersect(s1, s2):
-    # http://tinyurl.com/l2jcpj8
-    a1, b1, a2, b2 = chain(s1, s2)
-    x1, y1, x2, y2 = chain(a1, a2)
-    dx1, dy1, dx2, dy2 = b1.x - x1, b1.y - y1, b2.x - x2, b2.y - y2
-    vp = dx1 * dy2 - dx2 * dy1
-    if vp == 0:
-        return 0
-    vx, vy = x2 - x1, y2 - y1
-    return 1 if all([0 < (vx * dy2 - vy * dx2) / vp < 1,
-                     0 < (vx * dy1 - vy * dx1) / vp < 1]) else 0
+WallCrossing = namedtuple('WallCrossing', ['wall', 'path'])
 
 
 def constrain(given_point, m, bounds, rightward=True):
@@ -83,14 +73,18 @@ class GraphMap(object):
                  (points[secondIndex], points[firstIndex])]
                 for firstIndex, secondIndex in combinations(triangle, 2)
             ]))
-        self.walls, self.wall_dict = self.computeWalls()
+        wall_crossings, self.wall_dict = self.computeWalls()
+        self.walls = [cross.wall for cross in wall_crossings]
         self.removeMultiWallEdges()
+        self.addCrossings(wall_crossings)
+
+        # can't use edges_iter here since we're modifying it
         dist_squared = self.min_distance ** 2
-        for e in self.graph.edges():
-            if distance_squared(*e) > 2 * dist_squared:
-                self.graph.remove_edge(*e)
+        for v1, v2, attrs in self.graph.edges(data=True):
+            if distance_squared(v1, v2) > 2 * dist_squared:
+                self.graph.remove_edge(v1, v2)
                 if not nx.is_connected(self.graph):
-                    self.graph.add_edge(*e)
+                    self.graph.add_edge(v1, v2, attrs)
 
     def removeMultiWallEdges(self):
         for edge in self.graph.edges():
@@ -106,6 +100,19 @@ class GraphMap(object):
     def pointOutsideBounds(self, x, y):
         return any([x < 0, x > self.dims.w, y < 0, y > self.dims.h])
 
+    def addCrossings(self, wall_crossings):
+        print(len(self.graph.edges()))
+        count = 0
+        for wall, (node1, node2) in wall_crossings:
+            # add the wall corresponding to an edge as an edge attribute
+            # this doesn't seem to get all of them though
+            # at this point multi-wall edges still exist
+            if self.graph.has_edge(node1, node2):
+                self.graph[node1][node2]['wall'] = wall
+                print(node1, node2, wall)
+                count += 1
+        print(count)
+
     def computeWalls(self):
         nodes = self.graph.nodes()
 
@@ -114,14 +121,16 @@ class GraphMap(object):
         site_list = SiteList(nodes)
         context = Context()
         voronoi(site_list, context)
-        verts, abcs, edges = context.vertices, context.lines, context.edges
-        walls = [None for _ in edges]
+        verts = context.vertices
 
-        for i, v1, v2 in edges:
+        walls = [None for _ in context.edges]
+
+        for i, v1, v2 in context.edges:
+            path = context.bisectors[i]
             if all(v != -1 and not self.pointOutsideBounds(*verts[v])
                    for v in (v1, v2)):
                 # edge has a vertex at either end, easy
-                walls[i] = (Coords(*verts[v1]), Coords(*verts[v2]))
+                walls[i] = WallCrossing((Coords(*verts[v1]), Coords(*verts[v2])), path)
                 continue
             if self.pointOutsideBounds(*verts[v1]):
                 v1 = -1
@@ -129,21 +138,21 @@ class GraphMap(object):
                 v2 = -1
             # apparently v1, v2 go left to right
             # calculate an edge point using slope = -a/b
-            a, b, _ = abcs[i]
+            a, b, _ = context.lines[i]
             p0 = Coords(*verts[v1 if v1 != -1 else v2])
             if self.pointOutsideBounds(*p0):
                 continue
             # need to handle case where b is 0
             p1 = Coords(*constrain(p0, (-a / b) if b else (-a * float('inf')),
                         self.dims, rightward=(v1 != -1)))
-            walls[i] = (p0, p1)
+            walls[i] = WallCrossing((p0, p1), path)
 
         wall_dict = dict()
         for site, edge_list in context.polygons.items():
-            wall_dict[nodes[site]] = [walls[i] for i, _, _ in edge_list
+            wall_dict[nodes[site]] = [walls[i].wall for i, _, _ in edge_list
                                       if walls[i] is not None]
 
-        return walls, wall_dict
+        return [wall for wall in walls if wall is not None], wall_dict
 
     def neighbors(self, node):
         return self.graph.neighbors(node)
@@ -162,6 +171,15 @@ class GraphMap(object):
 
     def node_label(self, n):
         return self.graph.node[n]['label']
+
+    def walls_for_node(self, n):
+        return self.wall_dict[n]
+
+    def wall_between_nodes(self, n1, n2):
+        for wall in self.walls_for_node(n1):
+            if intersect(wall, (n1, n2)):
+                return wall
+        return None
 
     def __getattr__(self, attrname):
         return getattr(self.graph, attrname)

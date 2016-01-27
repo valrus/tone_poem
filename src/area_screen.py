@@ -26,10 +26,9 @@ from kivy.uix.widget import Widget
 from beastie import NoteCollector
 from creature import PlayerCharacter
 from creature_widget import CreatureWidget
-from keyboard import MidiInputDispatcher
-from mingushelpers import is_note_on, is_note_off, notes_match
-from musicplayer import MusicPlayer
+from mingushelpers import notes_match
 from tools import Size, Quad, Rect, Coords, distance_squared, safe_divide, point_to_line
+from tools import vertices_to_edges
 from tools import ROOT_DIR, WINDOW_SIZE
 import map
 import map_label
@@ -43,11 +42,11 @@ class AtlasData(object):
             self.atlas_data = json.load(atlasfile)
 
     def page(self, page):
-        base, __ = os.path.splitext(os.path.basename(self.filename))
+        base, _ = os.path.splitext(os.path.basename(self.filename))
         return "{}-{}.png".format(base, page)
 
     def page_path(self, page):
-        base, __ = os.path.splitext(self.filename)
+        base, _ = os.path.splitext(self.filename)
         return "{}-{}.png".format(base, page)
 
     def texture(self, page):
@@ -110,7 +109,7 @@ class SkeletronMapRenderer(MapRenderer):
         with self.terrain.canvas:
             Color(1.0, 0, 0)
             for w1, w2 in walls:
-                print("Line", w1, w2)
+                # print("Line", w1, w2)
                 Line(points=list(chain(w1, w2)), width=2)
 
 
@@ -224,7 +223,7 @@ class MapLabel(Label):
 
 
 # XXX: Unit test this SO MUCH
-def sort_counterclockwise(center, point):
+def sort_counterclockwise_key(center, point):
     return (copysign(-1, point.y - center.y),
             -safe_divide(point.x - center.x, point.y - center.y))
 
@@ -245,22 +244,23 @@ def get_corner_vert(verts):
         return corner_vert
 
 
-class MapTile(Widget):
+class ShadeTile(Widget):
     texture = Image(os.path.join("sprites", "light.png")).texture
     mesh_verts = ListProperty([])
     mesh_indices = ListProperty([])
     shade_color = ListProperty([])
+    edge_darknesses = ListProperty([])
 
     def __init__(self, **kw):
         self.canvas = RenderContext(use_parent_projection=True,
                                     use_parent_modelview=True)
-        self.canvas['corners'] = [[float(x) for x in v]
-                                  for v in kw['corners']]
-        self.canvas['fNumSides'] = float(len(kw['corners']))
+        self.canvas['edges'] = kw['edges']
+        self.canvas['fNumSides'] = float(len(kw['edges']))
         self.canvas['centerCoords'] = [float(x) for x in kw['centerCoords']]
         self.canvas['resolution'] = [float(x) for x in WINDOW_SIZE]
+        self.canvas['darknesses'] = [1.0 for _ in kw['edges']]
         self.canvas.shader.source = os.path.join(ROOT_DIR, "fogbox.glsl")
-        super(MapTile, self).__init__(**kw)
+        super(ShadeTile, self).__init__(**kw)
 
 
 class MapOverlay(RelativeLayout):
@@ -269,13 +269,14 @@ class MapOverlay(RelativeLayout):
         super(MapOverlay, self).__init__(**kw)
         self.widgets = dict()
         self.clear = set()
+        self.clear_edges = set()
 
     def setup_fog(self, clear=None):
         if clear is None:
             self.clear = set()
         self.clear = clear
-        for vertex, walls in self.wall_dict.items():
-            sort_key = partial(sort_counterclockwise, vertex)
+        for center_vertex, walls in self.wall_dict.items():
+            sort_key = partial(sort_counterclockwise_key, center_vertex)
             verts = set(chain(*walls))
             corner_vert = get_corner_vert(verts)
             if corner_vert:
@@ -286,18 +287,19 @@ class MapOverlay(RelativeLayout):
                 mesh_verts.extend([x, y,
                                    0.5 + 0.5 * cos(2 * pi * i / len(sorted_verts)),
                                    0.5 + 0.5 * sin(2 * pi * i / len(sorted_verts))])
-            print(vertex, sorted_verts)
-            print(point_to_line(vertex, sorted_verts[0], sorted_verts[1]))
-            shade_widget = MapTile(
+            # print(center_vertex, sorted_verts)
+            # print(point_to_line(center_vertex, sorted_verts[0], sorted_verts[1]))
+            edges = vertices_to_edges(sorted_verts)
+            shade_widget = ShadeTile(
                 mesh_indices=get_triangular_indices(len(mesh_verts) // 4),
                 mesh_verts=mesh_verts,
-                shade_color=(0.0, 0.0, 0.0, 0.0 if vertex in clear else 1.0),
-                corners=sorted_verts,
-                centerCoords=vertex,
+                shade_color=(0.0, 0.0, 0.0, 0.0 if center_vertex in clear else 1.0),
+                edges=edges,
+                centerCoords=center_vertex,
                 opacity=1.0
             )
             self.add_widget(shade_widget)
-            self.widgets[vertex] = shade_widget
+            self.widgets[center_vertex] = shade_widget
 
     def reveal(self, vertex, *args):
         print('Revealing vertex {}'.format(vertex))
@@ -369,6 +371,7 @@ def getNavigationWidgets(start, graph_map, edges):
     widgets.append(big_label)
     return widgets
 
+
 class AreaScreen(Screen):
     overlay = ObjectProperty(None)
     terrain = ObjectProperty(None)
@@ -390,8 +393,8 @@ class AreaScreen(Screen):
         self.add_widget(self.terrain)
         self.features = MapFeatures(renderer=self.renderer)
         self.add_widget(self.features)
-        self.overlay = MapOverlay(self.map.wall_dict)
-        self.add_widget(self.overlay)
+        # self.overlay = MapOverlay(self.map.wall_dict)
+        # self.add_widget(self.overlay)
         self.ear = NoteCollector()
 
     def on_midi_in(self, instance, value):
@@ -433,13 +436,17 @@ class AreaScreen(Screen):
         print("Heard", heard)
         for neighbor in self.map.neighbors(self.pc_loc):
             if notes_match(heard, self.map.node_label(neighbor).container()):
+                prev_loc = self.pc_loc
                 self.pc_loc = neighbor
                 anim = Animation(
                     center=(self.pc_loc.x, self.pc_loc.y),
                     duration=0.5,
-                    transition=AnimationTransition.in_out_quad)
+                    transition=AnimationTransition.in_out_quad
+                )
                 anim.on_complete = self.resetNavigationWidgets
-                anim.on_start = partial(self.overlay.reveal, self.pc_loc)
+                if self.overlay:
+                    anim.on_start = partial(self.overlay.reveal, self.pc_loc)
+                print(self.map.wall_between_nodes(prev_loc, self.pc_loc))
                 anim.start(self.features.pcWidget)
 
     def draw_edges(self):
