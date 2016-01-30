@@ -58,17 +58,23 @@ void main(void) {
     float centerDistance = distance(cPos, centerCoords);
 
     // calculate the distance from the point to the closest edge
-    float edgeDistance = 1.0 / 0.0;
+    float minDistance = 1.0 / 0.0;
+    float minDistanceWeighted = 1.0 / 0.0;
     // omitting an edge from this list will make it light all the way to the edge
     for (int i = 0; i < numSides; i++) {
         float dist = pointToLine(cPos, edges[i]);
         float weightedDist = dist / darknesses[i];
-        if (weightedDist < edgeDistance) {
-            edgeDistance = weightedDist;
+        if (dist < minDistance) {
+            minDistance = dist;
+        }
+        if (weightedDist < minDistanceWeighted) {
+            minDistanceWeighted = weightedDist;
         }
     }
 
-    float alpha = centerDistance / (centerDistance + edgeDistance);
+    float interpolation = centerDistance / (centerDistance + minDistance);
+    float alpha = (1.0 - interpolation) * interpolation
+        + interpolation * (centerDistance / (centerDistance + minDistanceWeighted));
     gl_FragColor = vec4(frag_color.r,
                         frag_color.g,
                         frag_color.b,
