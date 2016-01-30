@@ -81,9 +81,8 @@ def intersect(s1, s2):
                      0 < (vx * dy1 - vy * dx1) / vp < 1]) else 0
 
 
-def vertices_to_edge(*verts):
-    """Convert 2 vertices to a 4-float list."""
-    return [float(x) for x in chain(*verts)]
+def sorted_pair(p1, p2):
+    return (p1, p2) if p1 < p2 else (p2, p1)
 
 
 def vertices_to_edges(verts):
@@ -92,10 +91,16 @@ def vertices_to_edges(verts):
     The output is in the form of a list of 4-float lists,
     suitable for passing to glsl as vec4s.
     """
-    return (
-        [vertices_to_edge(verts[-1], verts[0])]
-        + [vertices_to_edge(*pair) for pair in pairs(verts)]
-    )
+    return [sorted_pair(verts[-1], verts[0])] + [sorted_pair(*t) for t in list(pairs(verts))]
+
+
+def edge_to_vec4(verts):
+    """Convert 2 vertices to a 4-float list."""
+    return [float(x) for x in chain.from_iterable(verts)]
+
+
+def edges_to_vec4s(edges):
+    return [edge_to_vec4(edge) for edge in edges]
 
 
 def pairs(lst):

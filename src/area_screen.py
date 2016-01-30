@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import json
 import os
+from collections import OrderedDict, defaultdict
 from functools import partial
 from itertools import chain, repeat
 from math import copysign, sqrt, cos, sin, pi
@@ -28,7 +29,7 @@ from creature import PlayerCharacter
 from creature_widget import CreatureWidget
 from mingushelpers import notes_match
 from tools import Size, Quad, Rect, Coords, distance_squared, safe_divide, point_to_line
-from tools import vertices_to_edges
+from tools import vertices_to_edges, edges_to_vec4s
 from tools import ROOT_DIR, WINDOW_SIZE
 import map
 import map_label
@@ -254,13 +255,25 @@ class ShadeTile(Widget):
     def __init__(self, **kw):
         self.canvas = RenderContext(use_parent_projection=True,
                                     use_parent_modelview=True)
-        self.canvas['edges'] = kw['edges']
-        self.canvas['fNumSides'] = float(len(kw['edges']))
+        # Keys: edges, values: 1.0 for dark, 0.0 for light
+        self.edges = OrderedDict(
+            (edge, 1.0)
+            for edge in kw['edges']
+        )
+        # self.edges[next(iter(self.edges.keys()))] = 0.0
+        self.canvas['edges'] = edges_to_vec4s(self.edges.keys())
+        self.canvas['fNumSides'] = float(len(self.edges))
         self.canvas['centerCoords'] = [float(x) for x in kw['centerCoords']]
         self.canvas['resolution'] = [float(x) for x in WINDOW_SIZE]
-        self.canvas['darknesses'] = [1.0 for _ in kw['edges']]
+        darknesses = list(self.edges.values())
+        self.canvas['darknesses'] = darknesses
         self.canvas.shader.source = os.path.join(ROOT_DIR, "fogbox.glsl")
+        self.bind(edge_darknesses=self.on_edge_darknesses)
         super(ShadeTile, self).__init__(**kw)
+        self.edge_darknesses = darknesses
+
+    def on_edge_darknesses(self, instance, value):
+        self.canvas['darknesses'] = list(value)
 
 
 class MapOverlay(RelativeLayout):
@@ -272,9 +285,7 @@ class MapOverlay(RelativeLayout):
         self.clear_edges = set()
 
     def setup_fog(self, clear=None):
-        if clear is None:
-            self.clear = set()
-        self.clear = clear
+        self.clear = clear or set()
         for center_vertex, walls in self.wall_dict.items():
             sort_key = partial(sort_counterclockwise_key, center_vertex)
             verts = set(chain(*walls))
@@ -290,6 +301,8 @@ class MapOverlay(RelativeLayout):
             # print(center_vertex, sorted_verts)
             # print(point_to_line(center_vertex, sorted_verts[0], sorted_verts[1]))
             edges = vertices_to_edges(sorted_verts)
+            if center_vertex in clear:
+                print('vertex at {} has {} edges'.format(center_vertex, len(edges)), edges)
             shade_widget = ShadeTile(
                 mesh_indices=get_triangular_indices(len(mesh_verts) // 4),
                 mesh_verts=mesh_verts,
@@ -301,16 +314,27 @@ class MapOverlay(RelativeLayout):
             self.add_widget(shade_widget)
             self.widgets[center_vertex] = shade_widget
 
-    def reveal(self, vertex, *args):
-        print('Revealing vertex {}'.format(vertex))
+    def reveal(self, center_vertex, edge_dict, *args):
         anim = Animation(
             shade_color=(0, 0, 0, 0),
             duration=1.0,
             transition=AnimationTransition.in_out_quad,
         )
-        anim.start(self.widgets[vertex])
-        self.clear.add(vertex)
-
+        anim.start(self.widgets[center_vertex])
+        self.clear.add(center_vertex)
+        for vertex, edges in edge_dict.items():
+            widget = self.widgets[vertex]
+            for edge in edges:
+                print(vertex, len(widget.edges), widget.edges)
+                # sometimes this adds an edge?
+                widget.edges[edge] = 0.0
+                print(len(widget.edges), widget.edges)
+                anim = Animation(
+                    edge_darknesses=list(widget.edges.values()),
+                    duration=1.0,
+                    transition=AnimationTransition.in_out_quad,
+                )
+                anim.start(widget)
 
 class MapTerrain(RelativeLayout):
     def __init__(self, **kw):
@@ -393,8 +417,8 @@ class AreaScreen(Screen):
         self.add_widget(self.terrain)
         self.features = MapFeatures(renderer=self.renderer)
         self.add_widget(self.features)
-        # self.overlay = MapOverlay(self.map.wall_dict)
-        # self.add_widget(self.overlay)
+        self.overlay = MapOverlay(self.map.wall_dict)
+        self.add_widget(self.overlay)
         self.ear = NoteCollector()
 
     def on_midi_in(self, instance, value):
@@ -428,6 +452,15 @@ class AreaScreen(Screen):
             # print("adding widget", w.text, "with center", w.center)
             self.features.add_widget(w)
 
+    def reveal_map_areas(self, loc, *args):
+        clear_edges = defaultdict(list)
+        for adjacent_node in self.map.neighbors(loc):
+            if adjacent_node in self.overlay.clear:
+                adjacent_edge = self.map.wall_between_nodes(loc, adjacent_node)
+                clear_edges[adjacent_node].append(adjacent_edge)
+                clear_edges[loc].append(adjacent_edge)
+        self.overlay.reveal(loc, clear_edges)
+
     def on_midi(self, msg):
         self.ear.hear(msg)
         if not self.ear.heard_count() >= 1:
@@ -445,7 +478,7 @@ class AreaScreen(Screen):
                 )
                 anim.on_complete = self.resetNavigationWidgets
                 if self.overlay:
-                    anim.on_start = partial(self.overlay.reveal, self.pc_loc)
+                    anim.on_start = partial(self.reveal_map_areas, self.pc_loc)
                 print(self.map.wall_between_nodes(prev_loc, self.pc_loc))
                 anim.start(self.features.pcWidget)
 

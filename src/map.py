@@ -176,10 +176,7 @@ class GraphMap(object):
         return self.wall_dict[n]
 
     def wall_between_nodes(self, n1, n2):
-        for wall in self.walls_for_node(n1):
-            if intersect(wall, (n1, n2)):
-                return wall
-        return None
+        return self.graph[n1][n2]['wall']
 
     def __getattr__(self, attrname):
         return getattr(self.graph, attrname)

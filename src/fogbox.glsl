@@ -62,8 +62,9 @@ void main(void) {
     // omitting an edge from this list will make it light all the way to the edge
     for (int i = 0; i < numSides; i++) {
         float dist = pointToLine(cPos, edges[i]);
-        if (dist < edgeDistance) {
-            edgeDistance = dist * darknesses[i];
+        float weightedDist = dist / darknesses[i];
+        if (weightedDist < edgeDistance) {
+            edgeDistance = weightedDist;
         }
     }
 
