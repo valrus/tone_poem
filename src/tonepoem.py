@@ -67,8 +67,10 @@ class TonePoemGame(ScreenManager):
         elif keycode[1] == 'right' and self.screen_index < len(self.screen_dict):
             self.screen_index += 1
             self._switch_screens(self.screen_index, direction='left')
+        elif keycode[1] == 's':
+            self.app.open_settings()
         else:
-            print(keycode)
+            print(keycode, self.screen_index)
             return False
 
 
