@@ -1,6 +1,6 @@
 ## A Crazy Idea
 
-Code for a really long-shot, super-insane idea I had for a project involving Kivy and MIDI input.
+Code for a really long-shot, super-insane idea I had for a project involving Kivy and MIDI input. In short the idea is a Japanese-style RPG that teaches music theory. Currently it barely rises to the level of "tech demo," but it's OK as a proof of concept/demonstration that the basic idea could work.
 
 I used shadowmint's [kivy-buildout](https://github.com/shadowmint/kivy-buildout) as a starting point. Here's my very rough list of steps to get Kivy 1.8 stable working (modulo bugs in Kivy itself) with Python 3 and [python-rtmidi](https://pypi.python.org/pypi/python-rtmidi) in a buildout in OS X:
 
