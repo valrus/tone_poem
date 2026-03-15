@@ -42,7 +42,7 @@ varying vec4 frag_color;
 uniform vec4       edges[12];
 uniform float      darknesses[12];
 uniform float      fNumSides;
-uniform vec2       center;
+uniform vec2       centerCoords;
 uniform vec2       resolution;
 
 float pointToLine(vec2 p0, vec4 seg) {
@@ -55,7 +55,7 @@ float pointToLine(vec2 p0, vec4 seg) {
 void main(void) {
     int numSides = int(fNumSides);
     vec2 cPos = gl_FragCoord.xy;
-    float centerDistance = distance(cPos, center);
+    float centerDistance = distance(cPos, centerCoords);
 
     // calculate the distance from the point to the closest edge
     float minDistance = 1.0 / 0.0;

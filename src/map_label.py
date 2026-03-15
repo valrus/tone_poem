@@ -1,6 +1,6 @@
 from random import choice
-from mingus.containers import Note
-from mingus.containers import NoteContainer
+from mingus.containers.Note import Note
+from mingus.containers.NoteContainer import NoteContainer
 from mingushelpers import NOTE_NAMES, fancify_note_name
 from mingus.core.intervals import determine
 

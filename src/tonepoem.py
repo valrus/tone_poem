@@ -36,9 +36,9 @@ if DEBUG:
 
 
 class TonePoemGame(ScreenManager):
-    def __init__(self, *, screen_dict, app, **kw):
+    def __init__(self, screen_dict, **kw):
         super(TonePoemGame, self).__init__(**kw)
-        self.app = app
+        self.app = kw['app']
         self.screen_dict = screen_dict
         self.screen_order = list(screen_dict.keys())
         self.screen_index = 0
@@ -130,7 +130,7 @@ class TonePoemApp(App):
         self.setting_panel = Settings()
 
         party = PlayerParty()
-        sm = TonePoemGame(screen_dict=OrderedDict([
+        sm = TonePoemGame(OrderedDict([
             ('area', AreaScreen(name='area')),
             ('encounter', EncounterScreen(name='encounter', party=party))
         ]), app=self)

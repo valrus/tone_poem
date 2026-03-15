@@ -8,8 +8,7 @@ from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty
 
 from mingus.midi import fluidsynth
-from mido import Message
-from mido.midifiles import MidiFile, MetaMessage, merge_tracks
+from mido.midifiles import MidiFile, MetaMessage, Message, merge_tracks
 
 SYNTH = fluidsynth.midi.fs
 DEFAULT_TEMPO = 500000
