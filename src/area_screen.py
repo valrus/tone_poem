@@ -305,7 +305,7 @@ class ShadeTile(Widget):
         self.canvas["edges"] = edges_to_vec4s(self.edges.keys())
         self.canvas["fNumSides"] = float(len(self.edges))
         self.canvas["centerCoords"] = [float(x) for x in centerCoords]
-        self.canvas["resolution"] = [float(x) for x in WINDOW_SIZE]
+        self.canvas["resolution"] = [float(x) for x in WINDOW_SIZE.display_tuple]
         darknesses = list(self.edges.values())
         self.canvas["darknesses"] = darknesses
         self.canvas.shader.source = os.path.join(ROOT_DIR, "fogbox.glsl")

@@ -1,11 +1,73 @@
 import os
-from collections import namedtuple
 from itertools import chain
 from math import sqrt
+from typing import NamedTuple
 
-Size = namedtuple("Size", "w h")
-Rect = namedtuple("Rect", "x y w h")
-Quad = namedtuple("Quad", "x1 y1 x2 y2")
+from kivy.metrics import Metrics
+
+
+class Size(NamedTuple):
+    w: int
+    h: int
+
+    @property
+    def dw(self):
+        return self.w * Metrics.dp
+
+    @property
+    def dh(self):
+        return self.h * Metrics.dp
+
+    @property
+    def display_tuple(self):
+        return (self.dw, self.dh)
+
+
+class Rect(NamedTuple):
+    x: float
+    y: float
+    w: float
+    h: float
+
+    @property
+    def dx(self):
+        return self.x * Metrics.dp
+
+    @property
+    def dy(self):
+        return self.y * Metrics.dp
+
+    @property
+    def dw(self):
+        return self.w * Metrics.dp
+
+    @property
+    def dh(self):
+        return self.h * Metrics.dp
+
+
+class Quad(NamedTuple):
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+
+    @property
+    def dx1(self):
+        return self.x1 * Metrics.dp
+
+    @property
+    def dy1(self):
+        return self.y1 * Metrics.dp
+
+    @property
+    def dx2(self):
+        return self.x2 * Metrics.dp
+
+    @property
+    def dy2(self):
+        return self.y2 * Metrics.dp
+
 
 WINDOW_SIZE = Size(1600, 900)
 
@@ -14,7 +76,10 @@ ROOT_DIR = os.path.dirname(__file__)
 CONFIG_INI = "config.ini"
 
 
-class Coords(namedtuple("Coords", "x y")):
+class Coords(NamedTuple):
+    x: float
+    y: float
+
     def __add__(self, other):
         return Coords(self.x + other.x, self.y + other.y)
 
@@ -34,7 +99,10 @@ class Coords(namedtuple("Coords", "x y")):
             raise NotImplementedError
 
 
-class Vect(namedtuple("Vect", "p1 p2")):
+class Vect(NamedTuple):
+    p1: float
+    p2: float
+
     def __abs__(self):
         return sqrt(distance_squared(*self))
 

@@ -1,4 +1,4 @@
-#:kivy 1.1.0
+#:kivy 1.5.0
 #:import WINDOW_SIZE tools.WINDOW_SIZE
 #:import MidiInputDispatcher keyboard.MidiInputDispatcher
 
@@ -39,7 +39,7 @@
 <ShadeTile>:
     color: (0, 0, 0, 1)
     size_hint: None, None
-    size: tuple(WINDOW_SIZE)
+    size: WINDOW_SIZE.display_tuple
     canvas:
         Color:
             rgba: self.shade_color
@@ -51,7 +51,7 @@
 
 <MapOverlay>:
     size_hint: None, None
-    size: tuple(WINDOW_SIZE)
+    size: WINDOW_SIZE.display_tuple
     pos: 0, 0
     opacity: 1.0
 
