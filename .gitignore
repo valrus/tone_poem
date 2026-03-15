@@ -37,3 +37,4 @@ pygame_test.py
 .python-version
 builder_stats.html
 *.profile
+/.direnv/

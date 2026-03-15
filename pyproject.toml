@@ -27,10 +27,11 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-  "mingus",
-  "pyfluidsynth3",
-  "mido",
   "kivy",
+  "mingus[fluidsynth]",
+  "mido",
+  "networkx",
+  # "poisson-disc",
 ]
 
 [project.optional-dependencies]
