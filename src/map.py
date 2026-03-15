@@ -41,13 +41,13 @@ def constrain(given_point, m, bounds, rightward=True):
 def _secondneighbors(graph, start):
     """Generate all nodes that are distance 2 from the given one.
 
-    (Note: this means it does not include nodes adjacent to the given one.
+    (Note: this means it does not include nodes adjacent to the given one.)
     """
     immediate_neighbors = set(n for n in nx.all_neighbors(graph, start))
     neighborhood = nx.ego_graph(graph, start, radius=2, center=False)
-    for n in neighborhood.nodes_iter():
+    for n in neighborhood.nodes():
         if n not in immediate_neighbors:
-            yield graph.node[n]
+            yield graph.nodes[n]
 
 
 class GraphMap(object):
@@ -85,12 +85,12 @@ class GraphMap(object):
 
         # remove too-long edges unless doing so would disconnect the graph
         dist_squared = self.min_distance ** 2
-        # can't use edges_iter here since we're modifying it
-        for v1, v2, attrs in self.graph.edges(data=True):
+        # can't use edges here since we're modifying it
+        for v1, v2, attrs in list(self.graph.edges(data=True)):
             if distance_squared(v1, v2) > 2 * dist_squared:
                 self.graph.remove_edge(v1, v2)
                 if not nx.is_connected(self.graph):
-                    self.graph.add_edge(v1, v2, attrs)
+                    self.graph.add_edge(v1, v2, **attrs)
 
     def removeMultiWallEdges(self):
         for edge in self.graph.edges():
@@ -120,7 +120,7 @@ class GraphMap(object):
         print(count)
 
     def computeWalls(self):
-        nodes = self.graph.nodes()
+        nodes = list(self.graph.nodes())
 
         # Poached from voronoi.computeVoronoiDiagram
         # http://stackoverflow.com/questions/9441007/how-can-i-get-a-dictionary-of-cells-from-this-voronoi-diagram-data
@@ -172,16 +172,16 @@ class GraphMap(object):
         pass
 
     def add_labels(self, nodeType):
-        nx.set_node_attributes(self.graph, 'label', {
-            n: nodeType() for n in self.graph.nodes_iter()
-        })
+        nx.set_node_attributes(self.graph, {
+            n: nodeType() for n in self.graph.nodes()
+        }, 'label')
         self._cleanup_nodes(nodeType)
 
     def edge_label(self, n1, n2):
         return self.node_label(n1) - self.node_label(n2)
 
     def node_label(self, n):
-        return self.graph.node[n]['label']
+        return self.graph.nodes[n]['label']
 
     def walls_for_node(self, n):
         return self.wall_dict[n]
@@ -200,10 +200,10 @@ class ForestMap(GraphMap):
         This means satisfying the following constraint:
         No node may have more than one adjacent node with the same value.
         """
-        for center in nx.nodes_iter(self.graph):
+        for center in nx.nodes(self.graph):
             seen = set()
             for neighbor in nx.all_neighbors(self.graph, center):
-                node = self.graph.node[neighbor]
+                node = self.graph.nodes[neighbor]
                 if node['label'].name in seen:
                     illegal = set(n['label'].name for n in _secondneighbors(self.graph, neighbor))
                     # Not a fan of reaching in and using to_shorthand here, but...

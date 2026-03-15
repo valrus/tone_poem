@@ -410,7 +410,7 @@ class AreaScreen(Screen):
         self.renderer = kw.get("renderer", ForestMapRenderer)()
         self.vertices_pos = self.map.nodes()
         self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
-        self.pc_loc = choice(self.vertices_pos)
+        self.pc_loc = choice(list(self.vertices_pos))
         self.nav_widgets = []
         super(AreaScreen, self).__init__(**kw)
         self.terrain = MapTerrain(renderer=self.renderer)
@@ -488,7 +488,7 @@ class AreaScreen(Screen):
         """
         self.renderer.draw_paths([
             [v1, v2]
-            for v1, v2 in self.map.edges_iter(self.vertices_pos)
+            for v1, v2 in self.map.edges(self.vertices_pos)
         ])
 
     def draw_walls(self):
