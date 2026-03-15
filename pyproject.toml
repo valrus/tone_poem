@@ -1,9 +1,5 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [project]
-name = "tone poem"
+name = "tone-poem"
 dynamic = ["version"]
 description = 'A music theory JRPG.'
 readme = "README.md"
@@ -49,12 +45,6 @@ test = [
 
 [project.urls]
 Homepage = "https://source.tube/valrus/beetsplug-covergrid"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/beetsplug"]
-
-[tool.hatch.version]
-path = "src/beetsplug/covergrid/__about__.py"
 
 [tool.ruff]
 line-length = 80

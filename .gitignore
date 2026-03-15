@@ -38,3 +38,4 @@ pygame_test.py
 builder_stats.html
 *.profile
 /.direnv/
+/.DS_Store
