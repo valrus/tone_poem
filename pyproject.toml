@@ -31,6 +31,9 @@ dependencies = [
   # "poisson-disc",
 ]
 
+[project.scripts]
+tone-poem = "tone_poem.tonepoem:main"
+
 [project.optional-dependencies]
 dev = [
   "mypy",
