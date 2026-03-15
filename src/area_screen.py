@@ -11,12 +11,14 @@ from kivy.core.image import Image
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Line, Mesh, RenderContext
 from kivy.graphics.texture import Texture
+from kivy.metrics import Metrics
 from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.label import Label
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
+from pydantic.dataclasses import dataclass
 
 import map
 import map_label
@@ -31,6 +33,7 @@ from tools import (
     Coords,
     Quad,
     Rect,
+    Scalable,
     Size,
     WallCrossing,
     distance_squared,
@@ -126,6 +129,29 @@ class SkeletronMapRenderer(MapRenderer):
                 Line(points=list(chain(w1, w2)), width=2)
 
 
+@dataclass(frozen=True)
+class ForestMeshVertex(Scalable):
+    x: float
+    y: float
+    texture_x: float
+    texture_y: float
+    rotation: float
+    center_x: float
+    center_y: float
+
+    @property
+    def display_tuple(self):
+        return (
+            self.x * Metrics.dp,
+            self.y * Metrics.dp,
+            self.texture_x,
+            self.texture_y,
+            self.rotation,
+            self.center_x * Metrics.dp,
+            self.center_y * Metrics.dp,
+        )
+
+
 class ForestMapRenderer(SkeletronMapRenderer):
     sprites = AtlasData(os.path.join(ROOT_DIR, "sprites", "trees.atlas"))
     wall_page = 0
@@ -156,9 +182,16 @@ class ForestMapRenderer(SkeletronMapRenderer):
     def _choose_tex(self):
         return choice(list(self.uvs.values()))
 
-    def _mesh_box(self, uvs, x, y, scale=1.0):
-        return [
-            (
+    def _mesh_box(
+        self, uvs, x, y, scale=1.0
+    ) -> tuple[
+        ForestMeshVertex,
+        ForestMeshVertex,
+        ForestMeshVertex,
+        ForestMeshVertex,
+    ]:
+        return (
+            ForestMeshVertex(
                 -uvs.size.w * scale,
                 -uvs.size.h * scale,
                 uvs.corners.x1,
@@ -167,7 +200,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 x,
                 y,
             ),
-            (
+            ForestMeshVertex(
                 uvs.size.w * scale,
                 -uvs.size.h * scale,
                 uvs.corners.x2,
@@ -176,7 +209,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 x,
                 y,
             ),
-            (
+            ForestMeshVertex(
                 uvs.size.w * scale,
                 uvs.size.h * scale,
                 uvs.corners.x2,
@@ -185,7 +218,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 x,
                 y,
             ),
-            (
+            ForestMeshVertex(
                 -uvs.size.w * scale,
                 uvs.size.h * scale,
                 uvs.corners.x1,
@@ -194,7 +227,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 x,
                 y,
             ),
-        ]
+        )
 
     def _triangle_indices(self, start):
         return [start, start + 1, start + 2, start + 2, start + 3, start]
@@ -215,7 +248,6 @@ class ForestMapRenderer(SkeletronMapRenderer):
         while y > v2.y and ((x < v2.x) == x_going_right):
             jitter = gauss(0, 0.25)
             indices.extend(self._triangle_indices(len(verts)))
-            # TODO: display scaling here?
             verts.extend(
                 self._mesh_box(
                     self._choose_tex(),
@@ -232,12 +264,19 @@ class ForestMapRenderer(SkeletronMapRenderer):
         verts, indices = [], []
         with self.terrain.canvas:
             for wall in walls:
+                # note: modifies verts in place
                 self._get_tree_line(wall, verts, indices)
             # NB: Max vertices length is 65535. Might need multiple meshes.
+            # TODO: display scaling here?
             self.wall_meshes.append(
                 Mesh(
                     indices=indices,
-                    vertices=chain(*sorted(verts, key=lambda i: -i[6])),
+                    vertices=chain(
+                        *[
+                            vert.display_tuple
+                            for vert in sorted(verts, key=lambda i: -i.center_y)
+                        ]
+                    ),
                     mode="triangles",
                     fmt=self.__class__.vertex_format,
                     texture=self.__class__.sprites.texture(
