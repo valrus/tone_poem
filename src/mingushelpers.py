@@ -1,9 +1,7 @@
 from threading import Thread
 from time import sleep
 
-from mingus.containers.Instrument import MidiInstrument
-from mingus.containers.Note import Note
-from mingus.containers.NoteContainer import NoteContainer
+from mingus.containers import MidiInstrument, Note, NoteContainer
 from mingus.midi import fluidsynth
 
 # Music theory
@@ -28,23 +26,27 @@ MIDI_INSTRS = {name: num for num, name in enumerate(MidiInstrument.names)}
 # TODO: Unit testable
 def notes_match(nc1, nc2):
     """Return whether two NoteContainers' notes match, modulo octaves."""
-    return len(nc1) == len(nc2) and all(int(n1) % 12 == int(n2) % 12
-                                        for n1, n2 in zip(nc1, nc2))
+    return len(nc1) == len(nc2) and all(
+        int(n1) % 12 == int(n2) % 12 for n1, n2 in zip(nc1, nc2)
+    )
 
 
 # TODO: Unit testable
 def is_note_on(msg):
-    return msg.type == 'note_on' and msg.velocity > 0
+    return msg.type == "note_on" and msg.velocity > 0
 
 
 # TODO: Unit testable
 def is_note_off(msg):
-    return msg.type == 'note_off' or (msg.type == 'note_on'
-                                      and msg.velocity == 0)
+    return msg.type == "note_off" or (
+        msg.type == "note_on" and msg.velocity == 0
+    )
 
 
 def fancify_note_name(n):
-    return n.replace('b', '\N{MUSIC FLAT SIGN}').replace('#', '\N{MUSIC SHARP SIGN}')
+    return n.replace("b", "\N{MUSIC FLAT SIGN}").replace(
+        "#", "\N{MUSIC SHARP SIGN}"
+    )
 
 
 def play_stop_NoteContainer(noteContainer, duration):
@@ -57,10 +59,7 @@ def thread_NoteContainer(notes, duration, instr, *args):
     nc = NoteContainer(notes)
     if instr is not None:
         fluidsynth.set_instrument(nc[0].channel, instr)
-    t = Thread(
-        target=play_stop_NoteContainer,
-        args=(nc, duration)
-    )
+    t = Thread(target=play_stop_NoteContainer, args=(nc, duration))
     t.start()
     return t
 
@@ -68,8 +67,8 @@ def thread_NoteContainer(notes, duration, instr, *args):
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
     reverse = dict((value, key) for key, value in enums.items())
-    enums['reverse_mapping'] = reverse
-    return type('Enum', (), enums)
+    enums["reverse_mapping"] = reverse
+    return type("Enum", (), enums)
 
 
 def _drumNote_from_int(i):
@@ -127,138 +126,144 @@ class MidiPercussion(object):
     MuteTriangle = _drumNote_from_int(68)
     OpenTriangle = _drumNote_from_int(69)
 
+
 # Instruments
 
-InstrumentNames = dict((v, k) for k, v in enumerate([
-    "Acoustic Grand Piano",
-    "Bright Acoustic Piano",
-    "Electric Grand Piano",
-    "Honky-tonk Piano",
-    "Electric Piano 1",
-    "Electric Piano 2",
-    "Harpsichord",
-    "Clavi",
-    "Celesta",
-    "Glockenspiel",
-    "Music Box",
-    "Vibraphone",
-    "Marimba",
-    "Xylophone",
-    "Tubular Bells",
-    "Dulcimer",
-    "Drawbar Organ",
-    "Percussive Organ",
-    "Rock Organ",
-    "Church Organ",
-    "Reed Organ",
-    "Accordion",
-    "Harmonica",
-    "Tango Accordion",
-    "Acoustic Guitar (nylon)",
-    "Acoustic Guitar (steel)",
-    "Electric Guitar (jazz)",
-    "Electric Guitar (clean)",
-    "Electric Guitar (muted)",
-    "Overdriven Guitar",
-    "Distortion Guitar",
-    "Guitar harmonics",
-    "Acoustic Bass",
-    "Electric Bass (finger)",
-    "Electric Bass (pick)",
-    "Fretless Bass",
-    "Slap Bass 1",
-    "Slap Bass 2",
-    "Synth Bass 1",
-    "Synth Bass 2",
-    "Violin",
-    "Viola",
-    "Cello",
-    "Contrabass",
-    "Tremolo Strings",
-    "Pizzicato Strings",
-    "Orchestral Harp",
-    "Timpani",
-    "String Ensemble 1",
-    "String Ensemble 2",
-    "SynthStrings 1",
-    "SynthStrings 2",
-    "Choir Aahs",
-    "Voice Oohs",
-    "Synth Voice",
-    "Orchestra Hit",
-    "Trumpet",
-    "Trombone",
-    "Tuba",
-    "Muted Trumpet",
-    "French Horn",
-    "Brass Section",
-    "SynthBrass 1",
-    "SynthBrass 2",
-    "Soprano Sax",
-    "Alto Sax",
-    "Tenor Sax",
-    "Baritone Sax",
-    "Oboe",
-    "English Horn",
-    "Bassoon",
-    "Clarinet",
-    "Piccolo",
-    "Flute",
-    "Recorder",
-    "Pan Flute",
-    "Blown Bottle",
-    "Shakuhachi",
-    "Whistle",
-    "Ocarina",
-    "Lead1 (square)",
-    "Lead2 (sawtooth)",
-    "Lead3 (calliope)",
-    "Lead4 (chiff)",
-    "Lead5 (charang)",
-    "Lead6 (voice)",
-    "Lead7 (fifths)",
-    "Lead8 (bass + lead)",
-    "Pad1 (new age)",
-    "Pad2 (warm)",
-    "Pad3 (polysynth)",
-    "Pad4 (choir)",
-    "Pad5 (bowed)",
-    "Pad6 (metallic)",
-    "Pad7 (halo)",
-    "Pad8 (sweep)",
-    "FX1 (rain)",
-    "FX2 (soundtrack)",
-    "FX 3 (crystal)",
-    "FX 4 (atmosphere)",
-    "FX 5 (brightness)",
-    "FX 6 (goblins)",
-    "FX 7 (echoes)",
-    "FX 8 (sci-fi)",
-    "Sitar",
-    "Banjo",
-    "Shamisen",
-    "Koto",
-    "Kalimba",
-    "Bag pipe",
-    "Fiddle",
-    "Shanai",
-    "Tinkle Bell",
-    "Agogo",
-    "Steel Drums",
-    "Woodblock",
-    "Taiko Drum",
-    "Melodic Tom",
-    "Synth Drum",
-    "Reverse Cymbal",
-    "Guitar Fret Noise",
-    "Breath Noise",
-    "Seashore",
-    "Bird Tweet",
-    "Telephone Ring",
-    "Helicopter",
-    "Applause",
-    "Gunshot"
-]))
+InstrumentNames = dict(
+    (v, k)
+    for k, v in enumerate(
+        [
+            "Acoustic Grand Piano",
+            "Bright Acoustic Piano",
+            "Electric Grand Piano",
+            "Honky-tonk Piano",
+            "Electric Piano 1",
+            "Electric Piano 2",
+            "Harpsichord",
+            "Clavi",
+            "Celesta",
+            "Glockenspiel",
+            "Music Box",
+            "Vibraphone",
+            "Marimba",
+            "Xylophone",
+            "Tubular Bells",
+            "Dulcimer",
+            "Drawbar Organ",
+            "Percussive Organ",
+            "Rock Organ",
+            "Church Organ",
+            "Reed Organ",
+            "Accordion",
+            "Harmonica",
+            "Tango Accordion",
+            "Acoustic Guitar (nylon)",
+            "Acoustic Guitar (steel)",
+            "Electric Guitar (jazz)",
+            "Electric Guitar (clean)",
+            "Electric Guitar (muted)",
+            "Overdriven Guitar",
+            "Distortion Guitar",
+            "Guitar harmonics",
+            "Acoustic Bass",
+            "Electric Bass (finger)",
+            "Electric Bass (pick)",
+            "Fretless Bass",
+            "Slap Bass 1",
+            "Slap Bass 2",
+            "Synth Bass 1",
+            "Synth Bass 2",
+            "Violin",
+            "Viola",
+            "Cello",
+            "Contrabass",
+            "Tremolo Strings",
+            "Pizzicato Strings",
+            "Orchestral Harp",
+            "Timpani",
+            "String Ensemble 1",
+            "String Ensemble 2",
+            "SynthStrings 1",
+            "SynthStrings 2",
+            "Choir Aahs",
+            "Voice Oohs",
+            "Synth Voice",
+            "Orchestra Hit",
+            "Trumpet",
+            "Trombone",
+            "Tuba",
+            "Muted Trumpet",
+            "French Horn",
+            "Brass Section",
+            "SynthBrass 1",
+            "SynthBrass 2",
+            "Soprano Sax",
+            "Alto Sax",
+            "Tenor Sax",
+            "Baritone Sax",
+            "Oboe",
+            "English Horn",
+            "Bassoon",
+            "Clarinet",
+            "Piccolo",
+            "Flute",
+            "Recorder",
+            "Pan Flute",
+            "Blown Bottle",
+            "Shakuhachi",
+            "Whistle",
+            "Ocarina",
+            "Lead1 (square)",
+            "Lead2 (sawtooth)",
+            "Lead3 (calliope)",
+            "Lead4 (chiff)",
+            "Lead5 (charang)",
+            "Lead6 (voice)",
+            "Lead7 (fifths)",
+            "Lead8 (bass + lead)",
+            "Pad1 (new age)",
+            "Pad2 (warm)",
+            "Pad3 (polysynth)",
+            "Pad4 (choir)",
+            "Pad5 (bowed)",
+            "Pad6 (metallic)",
+            "Pad7 (halo)",
+            "Pad8 (sweep)",
+            "FX1 (rain)",
+            "FX2 (soundtrack)",
+            "FX 3 (crystal)",
+            "FX 4 (atmosphere)",
+            "FX 5 (brightness)",
+            "FX 6 (goblins)",
+            "FX 7 (echoes)",
+            "FX 8 (sci-fi)",
+            "Sitar",
+            "Banjo",
+            "Shamisen",
+            "Koto",
+            "Kalimba",
+            "Bag pipe",
+            "Fiddle",
+            "Shanai",
+            "Tinkle Bell",
+            "Agogo",
+            "Steel Drums",
+            "Woodblock",
+            "Taiko Drum",
+            "Melodic Tom",
+            "Synth Drum",
+            "Reverse Cymbal",
+            "Guitar Fret Noise",
+            "Breath Noise",
+            "Seashore",
+            "Bird Tweet",
+            "Telephone Ring",
+            "Helicopter",
+            "Applause",
+            "Gunshot",
+        ]
+    )
+)
 
 # Drawing things
 

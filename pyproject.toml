@@ -1,0 +1,81 @@
+[project]
+name = "tone-poem"
+dynamic = ["version"]
+description = 'A music theory JRPG.'
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "valrus", email = "ian@mccowan.space" },
+]
+maintainers = [
+  { name = "valrus", email = "ian@mccowan.space" },
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Topic :: Multimedia :: Sound/Audio",
+  "Topic :: Multimedia :: Graphics :: Viewers",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = [
+  "kivy",
+  "mingus[fluidsynth]",
+  "mido[ports-rtmidi]",
+  "networkx",
+  "pydantic > 2.0.0",
+  # "poisson-disc",
+]
+
+[project.scripts]
+tone-poem = "tone_poem.tonepoem:main"
+
+[project.optional-dependencies]
+dev = [
+  "mypy",
+  "python-lsp-server",
+  "pylsp-mypy",
+  "ruff",
+  "ipython",
+]
+test = [
+    "pytest",
+]
+
+[project.urls]
+Homepage = "https://source.tube/valrus/beetsplug-covergrid"
+
+[tool.ruff]
+line-length = 80
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.coverage.run]
+source_pkgs = ["beetsplug/covergrid", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/beetsplug/covergrid/__about__.py",
+]
+
+[tool.coverage.paths]
+beetsplug_covergrid = [
+  "src/beetsplug/covergrid",
+  "*/beetsplug-covergrid/src/beetsplug_covergrid",
+]
+tests = [
+  "tests",
+  "*/beetsplug-covergrid/tests",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

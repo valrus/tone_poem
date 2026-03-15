@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty
 
@@ -19,8 +17,8 @@ class Creature(EventDispatcher):
         self.name = name
         self.current_happiness = 0
         self.max_happiness = self.__class__.base_happiness
-        self.state = 'normal'
-        self.atlas = 'atlas://{}/{}'.format(atlasPath, self.state)
+        self.state = "normal"
+        self.atlas = "atlas://{}/{}".format(atlasPath, self.state)
 
 
 class PlayerCharacter(Creature):

@@ -1,24 +1,31 @@
 import threading
 
+import mido
 from kivy.event import EventDispatcher
-from kivy.graphics import Color, Rectangle
-from kivy.properties import ObjectProperty, ListProperty
-from kivy.properties import BooleanProperty, NumericProperty
+from kivy.properties import (
+    BooleanProperty,
+    ListProperty,
+    NumericProperty,
+    ObjectProperty,
+)
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
-
-import mido
-from mingus.containers.Note import Note
+from mingus.containers import Note
 from mingus.midi import fluidsynth
-from mingushelpers import is_note_on, is_note_off, PLAYER_CHANNEL
-from mingushelpers import InstrumentNames
+
+from mingushelpers import (
+    PLAYER_CHANNEL,
+    InstrumentNames,
+    is_note_off,
+    is_note_on,
+)
 
 
 class MidiInputDispatcher(EventDispatcher):
     def __init__(self, **kw):
         self.port = None
         self.watchers = set()
-        self.register_event_type('on_midi')
+        self.register_event_type("on_midi")
         super(MidiInputDispatcher, self).__init__(**kw)
 
     def available_ports(self):
@@ -27,15 +34,15 @@ class MidiInputDispatcher(EventDispatcher):
 
     def dispatch_midi(self, *args):
         for watcher in self.watchers:
-            watcher.dispatch('on_midi', *args)
+            watcher.dispatch("on_midi", *args)
 
     def open_port(self, portName):
-        if not self.port or self.port.name != portName:
-            if self.port:
+        if self.port:
+            if portName != self.port.name:
                 self.port.close()
-            print(portName)
-            if portName in mido.get_input_names():
-                self.port = mido.open_input(portName, callback=self.dispatch_midi)
+                print(portName)
+        else:
+            self.port = mido.open_input(portName, callback=self.dispatch_midi)
 
     def on_midi(self, *args):
         pass
@@ -49,8 +56,9 @@ class KeyboardThread(threading.Thread):
 
     def run(self):
         # need to use bank_select
-        fluidsynth.set_instrument(PLAYER_CHANNEL,
-                                  InstrumentNames["Acoustic Grand Piano"])
+        fluidsynth.set_instrument(
+            PLAYER_CHANNEL, InstrumentNames["Acoustic Grand Piano"]
+        )
         fluidsynth.play_Note(self.note)
         self.event.wait()
         fluidsynth.stop_Note(self.note)
@@ -85,7 +93,7 @@ class MidiKeyboard(RelativeLayout):
     midi_in = ObjectProperty(None)
 
     def __init__(self, **kw):
-        self.register_event_type('on_midi')
+        self.register_event_type("on_midi")
         self.keys = [None] * 12
         self.events = {}
         self.annotations = {}
@@ -117,4 +125,4 @@ class MidiKeyboard(RelativeLayout):
             self.keys[msg.note % 12].pressed = False
             self.events[msg.note].set()
         for watcher in self.watchers:
-            watcher.dispatch('on_midi', msg)
+            watcher.dispatch("on_midi", msg)

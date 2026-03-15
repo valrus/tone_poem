@@ -4,6 +4,7 @@
 ##
 #These are used to implement algorithms cleanly.
 """
+
 from random import randint
 
 
@@ -41,7 +42,7 @@ class RandomQueue:
         n = len(self.array)
 
         if n <= 0:
-            raise IndexError('Cannot pop from emty container!')
+            raise IndexError("Cannot pop from emty container!")
         elif n == 1:
             return self.array.pop()
         else:

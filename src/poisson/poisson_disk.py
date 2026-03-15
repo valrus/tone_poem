@@ -14,19 +14,11 @@
 ##@brief Contains functions for generating Poisson disk samples.
 ##
 
-from math import sin
-from math import cos
-from math import sqrt
-from math import ceil
-from math import pi
-
-from random import randint
-from random import uniform
+from math import ceil, cos, pi, sin, sqrt
+from random import randint, uniform
 
 from .datastructures import RandomQueue
-from .enhanced_grid import int_point_2d
-from .enhanced_grid import Grid2D
-from .enhanced_grid import ListGrid2D
+from .enhanced_grid import Grid2D, ListGrid2D, int_point_2d
 
 
 ##@brief Returns a random integer in the range [0, n-1] inclusive.
@@ -38,7 +30,7 @@ def rand(n):
 def sqr_dist(p0, p1):
     x0, y0 = p0
     x1, y1 = p1
-    return (x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0)
+    return (x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)
 
 
 ## @brief Gives a Poisson sample of points of a rectangle.
@@ -62,11 +54,11 @@ def sqr_dist(p0, p1):
 #        integers, so that the can be more accurately scaled to be
 #        used on larger rectangles.
 def sample_poisson_uniform(width, height, r, k):
-    #Convert rectangle (the one to be sampled) coordinates to
+    # Convert rectangle (the one to be sampled) coordinates to
     # coordinates in the grid.
     def grid_coordinates(p):
         x, y = p
-        return (int(x*inv_cell_size), int(y*inv_cell_size))
+        return (int(x * inv_cell_size), int(y * inv_cell_size))
 
     # Puts a sample point in all the algorithm's relevant containers.
     def put_point(p):
@@ -78,10 +70,10 @@ def sample_poisson_uniform(width, height, r, k):
     # the given point, between r and 2*r units away.
     def generate_random_around(p, r):
         x, y = p
-        rr = uniform(r, 2*r)
-        rt = uniform(0, 2*pi)
+        rr = uniform(r, 2 * r)
+        rt = uniform(0, 2 * pi)
 
-        return rr*sin(rt) + x, rr*cos(rt) + y
+        return rr * sin(rt) + x, rr * cos(rt) + y
 
     # Is the given point in the rectangle to be sampled?
     def in_rectangle(p):
@@ -91,37 +83,38 @@ def sample_poisson_uniform(width, height, r, k):
     def in_neighbourhood(p):
         gp = gx, gy = grid_coordinates(p)
 
-        if grid[gp]: return True
+        if grid[gp]:
+            return True
 
         for cell in grid.square_iter(gp, 2):
             if cell and sqr_dist(cell, p) <= r_sqr:
                 return True
         return False
 
-    #Create the grid
-    cell_size = r/sqrt(2)
+    # Create the grid
+    cell_size = r / sqrt(2)
     inv_cell_size = 1 / cell_size
-    r_sqr = r*r
+    r_sqr = r * r
 
-    grid = Grid2D((int(ceil(width/cell_size)),
-        int(ceil(height/cell_size))))
+    grid = Grid2D((int(ceil(width / cell_size)), int(ceil(height / cell_size))))
 
     process_list = RandomQueue()
     sample_points = []
 
-    #generate the first point
+    # generate the first point
     put_point((rand(width), rand(height)))
 
-    #generate other points from points in queue.
+    # generate other points from points in queue.
     while not process_list.empty():
         p = process_list.pop()
 
         for i in range(k):
             q = generate_random_around(p, r)
             if in_rectangle(q) and not in_neighbourhood(q):
-                    put_point(q)
+                put_point(q)
 
     return sample_points
+
 
 ##@brief Gives a Poisson sample of points of a rectangle with an arbitrary distance function between points.
 ##
@@ -143,11 +136,11 @@ def sample_poisson_uniform(width, height, r, k):
 #        integers, so that the can be more accurately scaled to be
 #        used on larger rectangles.
 def sample_poisson(width, height, r_grid, k):
-    #Convert rectangle (the one to be sampled) coordinates to
+    # Convert rectangle (the one to be sampled) coordinates to
     # coordinates in the grid.
     def grid_coordinates(p):
         x, y = p
-        return (int(x*inv_cell_size), int(y*inv_cell_size))
+        return (int(x * inv_cell_size), int(y * inv_cell_size))
 
     # Puts a sample point in all the algorithm's relevant containers.
     def put_point(p):
@@ -159,10 +152,10 @@ def sample_poisson(width, height, r_grid, k):
     # the given point, between r and 2*r units away.
     def generate_random_around(p, r):
         x, y = p
-        rr = uniform(r, 2*r)
-        rt = uniform(0, 2*pi)
+        rr = uniform(r, 2 * r)
+        rt = uniform(0, 2 * pi)
 
-        return rr*sin(rt) + x, rr*cos(rt) + y
+        return rr * sin(rt) + x, rr * cos(rt) + y
 
     # Is the given point in the rectangle to be sampled?
     def in_rectangle(p):
@@ -171,7 +164,7 @@ def sample_poisson(width, height, r_grid, k):
 
     def in_neighbourhood(p, r):
         gp = grid_coordinates(p)
-        r_sqr = r*r
+        r_sqr = r * r
 
         for cell in grid.square_iter(gp, 2):
             for q in cell:
@@ -181,21 +174,22 @@ def sample_poisson(width, height, r_grid, k):
 
     r_min, r_max = r_grid.min_max()
 
-    #Create the grid
-    cell_size = r_max/sqrt(2)
+    # Create the grid
+    cell_size = r_max / sqrt(2)
     inv_cell_size = 1 / cell_size
-    r_max_sqr = r_max*r_max
+    r_max_sqr = r_max * r_max
 
-    grid = ListGrid2D(int_point_2d((ceil(width/cell_size),
-        ceil(height/cell_size))))
+    grid = ListGrid2D(
+        int_point_2d((ceil(width / cell_size), ceil(height / cell_size)))
+    )
 
     process_list = RandomQueue()
     sample_points = []
 
-    #generate the first point
+    # generate the first point
     put_point((rand(width), rand(height)))
 
-    #generate other points from points in queue.
+    # generate other points from points in queue.
     while not process_list.empty():
         p = process_list.pop()
         r = r_grid[int_point_2d(p)]
@@ -203,6 +197,6 @@ def sample_poisson(width, height, r_grid, k):
         for i in range(k):
             q = generate_random_around(p, r)
             if in_rectangle(q) and not in_neighbourhood(q, r):
-                    put_point(q)
+                put_point(q)
 
     return sample_points
