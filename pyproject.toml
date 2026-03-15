@@ -29,8 +29,9 @@ classifiers = [
 dependencies = [
   "kivy",
   "mingus[fluidsynth]",
-  "mido",
+  "mido[ports-rtmidi]",
   "networkx",
+  "pydantic > 2.0.0",
   # "poisson-disc",
 ]
 
