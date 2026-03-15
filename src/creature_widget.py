@@ -11,9 +11,9 @@ class CreatureWidget(Widget):
     beat_length = NumericProperty(1.0)
     happy_label = ObjectProperty(None)
 
-    def __init__(self, creature, **kw):
+    def __init__(self, creature, *, use_label=True, **kw):
         super(CreatureWidget, self).__init__(**kw)
-        self.useLabel = kw.get("label", True)
+        self.use_label = use_label
         self.creature = creature
         self.image_source = self.creature.atlas
         self.thread = None
@@ -27,7 +27,7 @@ class CreatureWidget(Widget):
         self.thread.start()
 
     def on_happiness(self, *args):
-        if self.useLabel:
+        if self.use_label:
             self.happy_label.text = "".join([
                 u"\u25CF" * self.creature.current_happiness,
                 u"\u25CB" * (self.creature.max_happiness

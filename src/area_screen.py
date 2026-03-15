@@ -363,7 +363,7 @@ class MapFeatures(RelativeLayout):
             pc,
             size=(50, 50),
             size_hint=(None, None),
-            label=False
+            use_label=False
         )
         self.pcWidget.center = start_widget_pos
         self.add_widget(self.pcWidget)
