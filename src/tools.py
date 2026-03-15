@@ -1,12 +1,24 @@
 import os
+from dataclasses import astuple
 from itertools import chain
 from math import sqrt
-from typing import NamedTuple
 
 from kivy.metrics import Metrics
+from pydantic.dataclasses import dataclass
 
 
-class Size(NamedTuple):
+@dataclass(frozen=True)
+class Scalable:
+    @property
+    def display_tuple(self):
+        return (x * Metrics.dp for x in self)
+
+    def __iter__(self):
+        return iter(astuple(self))
+
+
+@dataclass(frozen=True)
+class Size(Scalable):
     w: int
     h: int
 
@@ -18,12 +30,9 @@ class Size(NamedTuple):
     def dh(self):
         return self.h * Metrics.dp
 
-    @property
-    def display_tuple(self):
-        return (self.dw, self.dh)
 
-
-class Rect(NamedTuple):
+@dataclass(frozen=True)
+class Rect(Scalable):
     x: float
     y: float
     w: float
@@ -46,7 +55,8 @@ class Rect(NamedTuple):
         return self.h * Metrics.dp
 
 
-class Quad(NamedTuple):
+@dataclass(frozen=True)
+class Quad(Scalable):
     x1: float
     y1: float
     x2: float
@@ -76,9 +86,18 @@ ROOT_DIR = os.path.dirname(__file__)
 CONFIG_INI = "config.ini"
 
 
-class Coords(NamedTuple):
+@dataclass(frozen=True)
+class Coords(Scalable):
     x: float
     y: float
+
+    @property
+    def dx(self):
+        return self.x * Metrics.dp
+
+    @property
+    def dy(self):
+        return self.y * Metrics.dp
 
     def __add__(self, other):
         return Coords(self.x + other.x, self.y + other.y)
@@ -86,20 +105,18 @@ class Coords(NamedTuple):
     def __sub__(self, other):
         return Coords(self.x - other.x, self.y - other.y)
 
-    def __rmul__(self, scalar):
-        try:
-            return Coords(scalar * self.x, scalar * self.y)
-        except:
-            raise NotImplementedError
+    def __rmul__(self, scalar: int):
+        return Coords(scalar * self.x, scalar * self.y)
 
-    def __truediv__(self, other):
-        try:
-            return Coords(self.x / other, self.y / other)
-        except:
-            raise NotImplementedError
+    def __truediv__(self, dividend: float):
+        return Coords(self.x / dividend, self.y / dividend)
+
+    def __lt__(self, other: "Coords"):
+        return astuple(self) < astuple(other)
 
 
-class Vect(NamedTuple):
+@dataclass(frozen=True)
+class Vect(Scalable):
     p1: float
     p2: float
 

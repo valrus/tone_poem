@@ -31,47 +31,6 @@
 #############################################################################
 
 
-def usage():
-    print("""
-voronoi - compute Voronoi diagram or Delaunay triangulation
-
-voronoi [-t -p -d]  [filename]
-
-Voronoi reads from filename (or standard input if no filename given) for a set
-of points in the plane and writes either the Voronoi diagram or the Delaunay
-triangulation to the standard output.  Each input line should consist of two
-real numbers, separated by white space.
-
-If option -t is present, the Delaunay triangulation is produced.
-Each output line is a triple i j k, which are the indices of the three points
-in a Delaunay triangle. Points are numbered starting at 0.
-
-If option -t is not present, the Voronoi diagram is produced.
-There are four output record types.
-
-s a b      indicates that an input point at coordinates a b was seen.
-l a b c    indicates a line with equation ax + by = c.
-v a b      indicates a vertex at a b.
-e l v1 v2  indicates a Voronoi segment which is a subsegment of line number l
-           with endpoints numbered v1 and v2.  If v1 or v2 is -1, the line
-           extends to infinity.
-
-Other options include:
-
-d    Print debugging info
-
-p    Produce output suitable for input to plot (1), rather than the forms
-     described above.
-
-On unsorted data uniformly distributed in the unit square, voronoi uses about
-20n+140 bytes of storage.
-
-AUTHOR
-Steve J. Fortune (1987) A Sweepline Algorithm for Voronoi Diagrams,
-Algorithmica 2, 153-174.
-""")
-
-
 #############################################################################
 #
 # For programmatic use two functions are available:
@@ -100,24 +59,42 @@ Algorithmica 2, 153-174.
 import getopt
 import math
 import sys
+from typing import TypeAlias
 
 TOLERANCE = 1e-9
 BIG_FLOAT = 1e38
 
+Vertex: TypeAlias = tuple[float, float]
+LineEquation: TypeAlias = tuple[float, float, float]
+EdgeTuple: TypeAlias = tuple[int, int, int]
+
 
 # ------------------------------------------------------------------
-class Context(object):
+class Context:
     def __init__(self):
         self.doPrint = 0
         self.debug = 0
         self.plot = 0
         self.triangulate = False
-        self.vertices = []  # list of vertex 2-tuples: (x,y)
-        self.lines = []  # equation of line 3-tuple (a b c), for the equation of the line a*x+b*y = c
-        self.bisectors = []  # (site, site) pairs corresponding to lines
-        self.edges = []  # edge 3-tuple: (line index, vertex 1 index, vertex 2 index)   if either vertex index is -1, the edge extends to infiinity
-        self.triangles = []  # 3-tuple of vertex indices
-        self.polygons = {}  # a dict of site:[edges] pairs
+
+        # list of vertex 2-tuples: (x,y)
+        self.vertices: list[Vertex] = []
+
+        # equation of line 3-tuple (a b c), for the equation of the line a*x+b*y = c
+        self.lines: list[LineEquation] = []
+
+        # (site, site) pairs corresponding to lines
+        self.bisectors: list[tuple[Vertex, Vertex]] = []
+
+        # edge 3-tuple: (line index, vertex 1 index, vertex 2 index)
+        # if either vertex index is -1, the edge extends to infiinity
+        self.edges: list[EdgeTuple] = []
+
+        # 3-tuple of vertex indices
+        self.triangles: [list[tuple[int, int, int]]] = []
+
+        # a dict of vertex_index:[edges] pairs
+        self.polygons: dict[int, list[EdgeTuple]] = {}
 
     def circle(self, x, y, rad):
         pass
@@ -815,6 +792,47 @@ def computeDelaunayTriangulation(points):
     context.triangulate = True
     voronoi(siteList, context)
     return context.triangles
+
+
+def usage():
+    print("""
+voronoi - compute Voronoi diagram or Delaunay triangulation
+
+voronoi [-t -p -d]  [filename]
+
+Voronoi reads from filename (or standard input if no filename given) for a set
+of points in the plane and writes either the Voronoi diagram or the Delaunay
+triangulation to the standard output.  Each input line should consist of two
+real numbers, separated by white space.
+
+If option -t is present, the Delaunay triangulation is produced.
+Each output line is a triple i j k, which are the indices of the three points
+in a Delaunay triangle. Points are numbered starting at 0.
+
+If option -t is not present, the Voronoi diagram is produced.
+There are four output record types.
+
+s a b      indicates that an input point at coordinates a b was seen.
+l a b c    indicates a line with equation ax + by = c.
+v a b      indicates a vertex at a b.
+e l v1 v2  indicates a Voronoi segment which is a subsegment of line number l
+           with endpoints numbered v1 and v2.  If v1 or v2 is -1, the line
+           extends to infinity.
+
+Other options include:
+
+d    Print debugging info
+
+p    Produce output suitable for input to plot (1), rather than the forms
+     described above.
+
+On unsorted data uniformly distributed in the unit square, voronoi uses about
+20n+140 bytes of storage.
+
+AUTHOR
+Steve J. Fortune (1987) A Sweepline Algorithm for Voronoi Diagrams,
+Algorithmica 2, 153-174.
+""")
 
 
 # -----------------------------------------------------------------------------

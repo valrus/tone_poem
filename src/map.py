@@ -1,16 +1,21 @@
-from collections import namedtuple
+from dataclasses import astuple
 from itertools import chain, combinations
 from math import floor
 
 import networkx as nx
+from pydantic.dataclasses import dataclass
 
+import voronoi
 from poisson.poisson_disk import sample_poisson_uniform
 from tools import WINDOW_SIZE, Coords, Size, distance_squared, intersect
-from voronoi import Context, SiteList, computeDelaunayTriangulation, voronoi
 
 LONG_DISTANCE = 300
 
-WallCrossing = namedtuple("WallCrossing", ["wall", "path"])
+
+@dataclass
+class WallCrossing:
+    wall: tuple[Coords, Coords]  # TODO what is this?
+    path: tuple[voronoi.Vertex, voronoi.Vertex]  # TODO what is this?
 
 
 def constrain(given_point, m, bounds, rightward=True):
@@ -50,7 +55,7 @@ def _secondneighbors(graph, start):
             yield graph.nodes[n]
 
 
-class GraphMap(object):
+class GraphMap:
     """A map with nodes connected by edges."""
 
     def __init__(self, margin: int = 60, dims: Size = WINDOW_SIZE):
@@ -69,7 +74,7 @@ class GraphMap(object):
         ]
         self.graph = nx.Graph()
         self.graph.add_nodes_from(points)
-        for triangle in computeDelaunayTriangulation(points):
+        for triangle in voronoi.computeDelaunayTriangulation(points):
             self.graph.add_edges_from(
                 chain.from_iterable(
                     [
@@ -117,7 +122,9 @@ class GraphMap(object):
     def addCrossings(self, wall_crossings):
         print(len(self.graph.edges()))
         count = 0
-        for wall, (node1, node2) in wall_crossings:
+        for wall, (node1, node2) in [
+            astuple(wall_crossing) for wall_crossing in wall_crossings
+        ]:
             # add the wall corresponding to an edge as an edge attribute
             # this doesn't seem to get all of them though
             # at this point multi-wall edges still exist
@@ -127,17 +134,22 @@ class GraphMap(object):
                 count += 1
         print(count)
 
-    def computeWalls(self):
+    def computeWalls(
+        self,
+    ) -> tuple[
+        list[WallCrossing],
+        dict[Coords, tuple[tuple[float, float], tuple[float, float]]],
+    ]:
         nodes = list(self.graph.nodes())
 
         # Poached from voronoi.computeVoronoiDiagram
         # http://stackoverflow.com/questions/9441007/how-can-i-get-a-dictionary-of-cells-from-this-voronoi-diagram-data
-        site_list = SiteList(nodes)
-        context = Context()
-        voronoi(site_list, context)
+        site_list = voronoi.SiteList(nodes)
+        context = voronoi.Context()
+        voronoi.voronoi(site_list, context)
         verts = context.vertices
 
-        walls = [None for _ in context.edges]
+        walls: list[WallCrossing | None] = [None for _ in context.edges]
 
         for i, v1, v2 in context.edges:
             path = context.bisectors[i]
@@ -147,7 +159,8 @@ class GraphMap(object):
             ):
                 # edge has a vertex at either end, easy
                 walls[i] = WallCrossing(
-                    (Coords(*verts[v1]), Coords(*verts[v2])), path
+                    wall=(Coords(*verts[v1]), Coords(*verts[v2])),
+                    path=path,
                 )
                 continue
             if self.pointOutsideBounds(*verts[v1]):

@@ -295,17 +295,21 @@ class ShadeTile(Widget):
     shade_color = ListProperty([])
     edge_darknesses = ListProperty([])
 
+    edges: dict
+
     def __init__(self, *, edges, centerCoords, **kw):
         self.canvas = RenderContext(
             use_parent_projection=True, use_parent_modelview=True
         )
         # Keys: edges, values: 1.0 for dark, 0.0 for light
-        self.edges = OrderedDict((edge, 1.0) for edge in edges)
+        self.edges = {edge: 1.0 for edge in edges}
         # self.edges[next(iter(self.edges.keys()))] = 0.0
         self.canvas["edges"] = edges_to_vec4s(self.edges.keys())
         self.canvas["fNumSides"] = float(len(self.edges))
         self.canvas["centerCoords"] = [float(x) for x in centerCoords]
-        self.canvas["resolution"] = [float(x) for x in WINDOW_SIZE.display_tuple]
+        self.canvas["resolution"] = [
+            float(x) for x in WINDOW_SIZE.display_tuple
+        ]
         darknesses = list(self.edges.values())
         self.canvas["darknesses"] = darknesses
         self.canvas.shader.source = os.path.join(ROOT_DIR, "fogbox.glsl")
@@ -318,6 +322,8 @@ class ShadeTile(Widget):
 
 
 class MapOverlay(RelativeLayout):
+    wall_dict: dict
+
     def __init__(self, wall_dict, **kw):
         self.wall_dict = wall_dict
         super(MapOverlay, self).__init__(**kw)
@@ -465,7 +471,8 @@ class AreaScreen(Screen):
     features = ObjectProperty(None)
     renderer = ObjectProperty(None)
     midi_in = ObjectProperty(None)
-    margin = 60
+
+    margin: int = 60
 
     def __init__(self, **kw):
         self.map = map.ForestMap(margin=AreaScreen.margin)
