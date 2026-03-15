@@ -338,8 +338,7 @@ class MapOverlay(RelativeLayout):
 
 
 class MapTerrain(RelativeLayout):
-    def __init__(self, **kw):
-        renderer = kw.pop("renderer", None)
+    def __init__(self, *, renderer, **kw):
         if renderer:
             self.canvas = RenderContext(use_parent_projection=True)
             if renderer.custom_shader:
@@ -348,8 +347,7 @@ class MapTerrain(RelativeLayout):
 
 
 class MapFeatures(RelativeLayout):
-    def __init__(self, **kw):
-        renderer = kw.pop("renderer", None)
+    def __init__(self, *, renderer, **kw):
         if renderer:
             self.canvas = RenderContext(use_parent_projection=True)
             if renderer.custom_shader:
