@@ -248,18 +248,18 @@ class ShadeTile(Widget):
     shade_color = ListProperty([])
     edge_darknesses = ListProperty([])
 
-    def __init__(self, **kw):
+    def __init__(self, *, edges, centerCoords, **kw):
         self.canvas = RenderContext(use_parent_projection=True,
                                     use_parent_modelview=True)
         # Keys: edges, values: 1.0 for dark, 0.0 for light
         self.edges = OrderedDict(
             (edge, 1.0)
-            for edge in kw['edges']
+            for edge in edges
         )
         # self.edges[next(iter(self.edges.keys()))] = 0.0
         self.canvas['edges'] = edges_to_vec4s(self.edges.keys())
         self.canvas['fNumSides'] = float(len(self.edges))
-        self.canvas['centerCoords'] = [float(x) for x in kw['centerCoords']]
+        self.canvas['centerCoords'] = [float(x) for x in centerCoords]
         self.canvas['resolution'] = [float(x) for x in WINDOW_SIZE]
         darknesses = list(self.edges.values())
         self.canvas['darknesses'] = darknesses
@@ -300,11 +300,11 @@ class MapOverlay(RelativeLayout):
             if center_vertex in clear:
                 print('vertex at {} has {} edges'.format(center_vertex, len(edges)), edges)
             shade_widget = ShadeTile(
+                edges=edges,
+                centerCoords=center_vertex,
                 mesh_indices=get_triangular_indices(len(mesh_verts) // 4),
                 mesh_verts=mesh_verts,
                 shade_color=(0.0, 0.0, 0.0, 0.0 if center_vertex in clear else 1.0),
-                edges=edges,
-                centerCoords=center_vertex,
                 opacity=1.0
             )
             self.add_widget(shade_widget)
