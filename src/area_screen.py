@@ -343,15 +343,11 @@ class MapTerrain(RelativeLayout):
 
 
 class MapFeatures(RelativeLayout):
-<<<<<<< HEAD
     def __init__(self, *, renderer, **kw):
         if renderer:
             self.canvas = RenderContext(use_parent_projection=True)
             if renderer.custom_shader:
                 self.canvas.shader.source = renderer.custom_shader
-=======
-    def __init__(self, **kw):
->>>>>>> parent of 6b58c3c (nix up, bump versions of everything)
         super(MapFeatures, self).__init__(**kw)
 
     def add_vertices(self, vertices_pos):
