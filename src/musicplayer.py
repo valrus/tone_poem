@@ -2,8 +2,8 @@ from kivy.clock import Clock
 from kivy.event import EventDispatcher
 
 import mingus.core.value as value
-from mingus.containers.Bar import Bar
-from mingus.containers.Track import Track
+from mingus.containers import Bar
+from mingus.containers import Track
 
 from mingushelpers import MidiPercussion
 from mido_player import MidiFilePlayer, PlayStatus

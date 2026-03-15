@@ -4,8 +4,8 @@ import sys
 
 sys.path.append(os.path.pardir)
 
-from mingus.containers.Note import Note
-from mingus.containers.NoteContainer import NoteContainer
+from mingus.containers import Note
+from mingus.containers import NoteContainer
 
 import mingushelpers
 

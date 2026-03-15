@@ -357,7 +357,6 @@ class Container1D (Container):
     def __iter__(self):
         for i in range(self.length):
             yield self[i]
-        raise StopIteration
 
     ## @brief Returns the same iterator as __iter__.
     #
@@ -378,7 +377,6 @@ class Container1D (Container):
         (x0, x1) = p
         for i in range(max(0, x0), min(x1, self.length)):
             yield self[i]
-        raise StopIteration
 
     ## @brief Returns an iterator that iterates over all cells in the square
     ## surrounding the given point.
@@ -410,7 +408,6 @@ class Container1D (Container):
     def index_iter(self):
         for i in range(self.length):
             yield i
-        raise StopIteration
 
 ## Class that implements __str__ and __iter__.
 class Container2D (Container):
@@ -447,7 +444,6 @@ class Container2D (Container):
     def __iter__(self):
         for i in range(self.width):
             yield self[i, ...]
-        raise StopIteration
 
     ## @brief Returns an iterator that iterates over all cells in the grid.
     ##
@@ -460,7 +456,6 @@ class Container2D (Container):
         for i in range(self.width):
             for j in range(self.height):
                 yield self[i, j]
-        raise StopIteration
 
     ## @brief Returns an iterator that iterates over a subgrid of this grid.
     ##
@@ -477,7 +472,6 @@ class Container2D (Container):
         for i in range(max(0, x0), min(x1, self.width)):
             for j in range(max(0, y0), min(y1, self.height)):
                 yield self[i, j]
-        raise StopIteration
 
     ## @brief Returns an iterator that iterates over all cells in the square
     ## surrounding the given point.
@@ -511,7 +505,6 @@ class Container2D (Container):
         for i in range(self.width):
             for j in range(self.height):
                 yield i, j
-        raise StopIteration
 
 
 class GridWindow1D (Container1D, AuxiliaryContainer): #Constant y
@@ -552,7 +545,6 @@ class Grid1D (Container1D, PrincipleContainer):
     def cell_iter(self):
         for i in range(self.width):
             yield self.grid[i]
-        raise StopIteration
 
     def __getitem__(self, x):
         if isinstance(x, int):
@@ -676,7 +668,6 @@ class Grid2D (Container2D, PrincipleContainer):
         for i in range(self.width):
             for j in range(self.height):
                 yield self.grid[i][j]
-        raise StopIteration
 
     def __getitem__(self, p):
         if isinstance(p, int):

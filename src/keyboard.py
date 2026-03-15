@@ -8,7 +8,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
 import mido
-from mingus.containers.Note import Note
+from mingus.containers import Note
 from mingus.midi import fluidsynth
 from mingushelpers import is_note_on, is_note_off, PLAYER_CHANNEL
 from mingushelpers import InstrumentNames
@@ -30,7 +30,7 @@ class MidiInputDispatcher(EventDispatcher):
             watcher.dispatch('on_midi', *args)
 
     def open_port(self, portName):
-        if portName != self.port.name:
+        if self.port and portName != self.port.name:
             self.port.close()
             print(portName)
             self.port = mido.open_input(portName, callback=self.dispatch_midi)

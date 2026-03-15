@@ -15,7 +15,7 @@ from kivy.core.image import Image
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Line, Mesh, Rectangle, RenderContext
 from kivy.graphics.texture import Texture
-from kivy.properties import ObjectProperty, BooleanProperty, ListProperty
+from kivy.properties import ObjectProperty, BooleanProperty, ListProperty, DictProperty
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.anchorlayout import AnchorLayout
@@ -252,18 +252,18 @@ class ShadeTile(Widget):
     shade_color = ListProperty([])
     edge_darknesses = ListProperty([])
 
-    def __init__(self, **kw):
+    def __init__(self, *, edges, **kw):
         self.canvas = RenderContext(use_parent_projection=True,
                                     use_parent_modelview=True)
         # Keys: edges, values: 1.0 for dark, 0.0 for light
         self.edges = OrderedDict(
             (edge, 1.0)
-            for edge in kw['edges']
+            for edge in edges
         )
         # self.edges[next(iter(self.edges.keys()))] = 0.0
         self.canvas['edges'] = edges_to_vec4s(self.edges.keys())
         self.canvas['fNumSides'] = float(len(self.edges))
-        self.canvas['centerCoords'] = [float(x) for x in kw['centerCoords']]
+        self.canvas['center'] = [float(x) for x in kw['center']]
         self.canvas['resolution'] = [float(x) for x in WINDOW_SIZE]
         darknesses = list(self.edges.values())
         self.canvas['darknesses'] = darknesses
@@ -304,11 +304,11 @@ class MapOverlay(RelativeLayout):
             if center_vertex in clear:
                 print('vertex at {} has {} edges'.format(center_vertex, len(edges)), edges)
             shade_widget = ShadeTile(
+                edges=edges,
                 mesh_indices=get_triangular_indices(len(mesh_verts) // 4),
                 mesh_verts=mesh_verts,
                 shade_color=(0.0, 0.0, 0.0, 0.0 if center_vertex in clear else 1.0),
-                edges=edges,
-                centerCoords=center_vertex,
+                center=center_vertex,
                 opacity=1.0
             )
             self.add_widget(shade_widget)
@@ -349,6 +349,11 @@ class MapTerrain(RelativeLayout):
 
 class MapFeatures(RelativeLayout):
     def __init__(self, **kw):
+        renderer = kw.pop("renderer", None)
+        if renderer:
+            self.canvas = RenderContext(use_parent_projection=True)
+            if renderer.custom_shader:
+                self.canvas.shader.source = renderer.custom_shader
         super(MapFeatures, self).__init__(**kw)
 
     def add_vertices(self, vertices_pos):
@@ -364,7 +369,7 @@ class MapFeatures(RelativeLayout):
             pc,
             size=(50, 50),
             size_hint=(None, None),
-            label=False
+            # label=False
         )
         self.pcWidget.center = start_widget_pos
         self.add_widget(self.pcWidget)
@@ -411,7 +416,7 @@ class AreaScreen(Screen):
         self.renderer = kw.get("renderer", ForestMapRenderer)()
         self.vertices_pos = self.map.nodes()
         self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
-        self.pc_loc = choice(self.vertices_pos)
+        self.pc_loc = choice(list(self.vertices_pos))
         self.nav_widgets = []
         super(AreaScreen, self).__init__(**kw)
         self.terrain = MapTerrain(renderer=self.renderer)
@@ -489,7 +494,7 @@ class AreaScreen(Screen):
         """
         self.renderer.draw_paths([
             [v1, v2]
-            for v1, v2 in self.map.edges_iter(self.vertices_pos)
+            for v1, v2 in self.map.edges(self.vertices_pos)
         ])
 
     def draw_walls(self):
