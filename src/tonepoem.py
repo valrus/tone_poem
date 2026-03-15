@@ -117,7 +117,11 @@ class TonePoemApp(App):
         settings.add_json_panel('Tone Poem', self.config, data=json.dumps(setting_base))
 
     def build(self):
-        fluidsynth.init(os.path.join(ROOT_DIR, 'sounds', 'FluidR3_GM.sf2'))
+        # TODO: check whether init succeeds
+        fluidsynth.init(
+            sf2=os.path.join(ROOT_DIR, 'sounds', 'FluidR3_GM.sf2'),
+            driver='coreaudio',
+        )
         self.midi_in = MidiInputDispatcher()
         midi_device = self.config.get('MIDI', 'Input device')
         if midi_device:
