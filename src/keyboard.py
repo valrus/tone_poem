@@ -8,7 +8,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
 import mido
-from mingus.containers.Note import Note
+from mingus.containers import Note
 from mingus.midi import fluidsynth
 from mingushelpers import is_note_on, is_note_off, PLAYER_CHANNEL
 from mingushelpers import InstrumentNames

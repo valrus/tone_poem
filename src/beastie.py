@@ -4,8 +4,8 @@ from random import choice
 from kivy.animation import Animation
 from kivy.properties import BooleanProperty
 
-from mingus.containers.Note import Note
-from mingus.containers.NoteContainer import NoteContainer
+from mingus.containers import Note
+from mingus.containers import NoteContainer
 
 from creature import Creature
 from mingushelpers import MidiPercussion, thread_NoteContainer
