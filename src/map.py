@@ -1,24 +1,27 @@
 from dataclasses import astuple
 from itertools import chain, combinations
 from math import floor
+from typing import Generator
 
 import networkx as nx
-from pydantic.dataclasses import dataclass
 
 import voronoi
 from poisson.poisson_disk import sample_poisson_uniform
-from tools import WINDOW_SIZE, Coords, Size, distance_squared, intersect
+from tools import (
+    WINDOW_SIZE,
+    Coords,
+    Size,
+    WallCrossing,
+    distance_squared,
+    intersect,
+)
 
 LONG_DISTANCE = 300
 
 
-@dataclass
-class WallCrossing:
-    wall: tuple[Coords, Coords]  # TODO what is this?
-    path: tuple[voronoi.Vertex, voronoi.Vertex]  # TODO what is this?
-
-
-def constrain(given_point, m, bounds, rightward=True):
+def constrain(
+    *, given_point: Coords, slope: float, bounds: Size, rightward: bool = True
+) -> Coords:
     """Given a line and bounds, return the point at the edge of those bounds.
 
     given_point should be a 2-tuple, m the slope of a line (which can be 0
@@ -31,19 +34,19 @@ def constrain(given_point, m, bounds, rightward=True):
     the right-most one if rightward is True and the left-most one otherwise.
     """
     x0, y0 = given_point
-    up = (m > 0) if rightward else (m < 0)
+    up = (slope > 0) if rightward else (slope < 0)
     vertical_border_distance = (bounds.h - y0) if up else y0
     dx = (bounds.w - x0) if rightward else -x0
-    rise = abs(m * dx)
+    rise = abs(slope * dx)
     if rise > vertical_border_distance:
         dy = vertical_border_distance * (1 if up else -1)
-        dx = dy / m if m else 0
+        dx = dy / slope if slope else 0
     else:
-        dy = dx * m
+        dy = dx * slope
     return Coords(x0 + dx, y0 + dy)
 
 
-def _secondneighbors(graph, start):
+def _secondneighbors(graph, start) -> Generator[Coords, None, None]:
     """Generate all nodes that are distance 2 from the given one.
 
     (Note: this means it does not include nodes adjacent to the given one.)
@@ -57,6 +60,12 @@ def _secondneighbors(graph, start):
 
 class GraphMap:
     """A map with nodes connected by edges."""
+
+    wall_dict: dict[Coords, voronoi.Bisector]
+    dims: Size
+    min_distance: float
+    margin: int
+    graph: nx.Graph
 
     def __init__(self, margin: int = 60, dims: Size = WINDOW_SIZE):
         self.dims = dims
@@ -136,10 +145,7 @@ class GraphMap:
 
     def computeWalls(
         self,
-    ) -> tuple[
-        list[WallCrossing],
-        dict[Coords, tuple[tuple[float, float], tuple[float, float]]],
-    ]:
+    ) -> tuple[list[WallCrossing], dict[Coords, voronoi.Bisector]]:
         nodes = list(self.graph.nodes())
 
         # Poached from voronoi.computeVoronoiDiagram
@@ -152,7 +158,7 @@ class GraphMap:
         walls: list[WallCrossing | None] = [None for _ in context.edges]
 
         for i, v1, v2 in context.edges:
-            path = context.bisectors[i]
+            path: voronoi.Bisector = context.bisectors[i]
             if all(
                 v != -1 and not self.pointOutsideBounds(*verts[v])
                 for v in (v1, v2)
@@ -176,9 +182,9 @@ class GraphMap:
             # need to handle case where b is 0
             p1 = Coords(
                 *constrain(
-                    p0,
-                    (-a / b) if b else (-a * float("inf")),
-                    self.dims,
+                    given_point=p0,
+                    slope=(-a / b) if b else (-a * float("inf")),
+                    bounds=self.dims,
                     rightward=(v1 != -1),
                 )
             )

@@ -1,6 +1,6 @@
 import json
 import os
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from functools import partial
 from itertools import chain, repeat
 from math import copysign, cos, pi, sin, sqrt
@@ -20,6 +20,7 @@ from kivy.uix.widget import Widget
 
 import map
 import map_label
+import voronoi
 from beastie import NoteCollector
 from creature import PlayerCharacter
 from creature_widget import CreatureWidget
@@ -31,6 +32,7 @@ from tools import (
     Quad,
     Rect,
     Size,
+    WallCrossing,
     distance_squared,
     edges_to_vec4s,
     safe_divide,
@@ -83,9 +85,10 @@ class UVData(object):
 
 
 class MapRenderer(EventDispatcher):
-    ground_tile = None
     terrain = ObjectProperty(None)
     features = ObjectProperty(None)
+
+    ground_tile = None
 
     def draw_paths(self, paths):
         return
@@ -212,6 +215,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
         while y > v2.y and ((x < v2.x) == x_going_right):
             jitter = gauss(0, 0.25)
             indices.extend(self._triangle_indices(len(verts)))
+            # TODO: display scaling here?
             verts.extend(
                 self._mesh_box(
                     self._choose_tex(),
@@ -322,7 +326,7 @@ class ShadeTile(Widget):
 
 
 class MapOverlay(RelativeLayout):
-    wall_dict: dict
+    wall_dict: tuple[list[WallCrossing], dict[Coords, voronoi.Bisector]]
 
     def __init__(self, wall_dict, **kw):
         self.wall_dict = wall_dict

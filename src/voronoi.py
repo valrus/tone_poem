@@ -65,6 +65,7 @@ TOLERANCE = 1e-9
 BIG_FLOAT = 1e38
 
 Vertex: TypeAlias = tuple[float, float]
+Bisector: TypeAlias = tuple[Vertex, Vertex]
 LineEquation: TypeAlias = tuple[float, float, float]
 EdgeTuple: TypeAlias = tuple[int, int, int]
 
@@ -84,7 +85,7 @@ class Context:
         self.lines: list[LineEquation] = []
 
         # (site, site) pairs corresponding to lines
-        self.bisectors: list[tuple[Vertex, Vertex]] = []
+        self.bisectors: list[Bisector] = []
 
         # edge 3-tuple: (line index, vertex 1 index, vertex 2 index)
         # if either vertex index is -1, the edge extends to infiinity

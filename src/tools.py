@@ -6,6 +6,8 @@ from math import sqrt
 from kivy.metrics import Metrics
 from pydantic.dataclasses import dataclass
 
+import voronoi
+
 
 @dataclass(frozen=True)
 class Scalable:
@@ -235,3 +237,9 @@ def safe_divide(numer, denom):
         return (-1 if numer < 0 else 1) * float("inf")
     else:
         return numer / denom
+
+
+@dataclass
+class WallCrossing:
+    wall: tuple[Coords, Coords]
+    path: tuple[voronoi.Vertex, voronoi.Vertex]
