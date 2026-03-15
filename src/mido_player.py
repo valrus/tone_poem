@@ -4,10 +4,9 @@ from fractions import Fraction
 from kivy.clock import Clock
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty
-
-from mingus.midi import fluidsynth
 from mido import Message
-from mido.midifiles import MidiFile, MetaMessage, merge_tracks
+from mido.midifiles import MetaMessage, MidiFile, merge_tracks
+from mingus.midi import fluidsynth
 
 SYNTH = fluidsynth.midi.fs
 DEFAULT_TEMPO = 500000
@@ -40,9 +39,9 @@ class MidiFilePlayer(EventDispatcher):
         self.tempo = DEFAULT_TEMPO
         for i, track in enumerate(self.mf.tracks):
             for msg in [m for m in track if isinstance(m, MetaMessage)]:
-                if msg.type == 'set_tempo':
+                if msg.type == "set_tempo":
                     self.tempo = msg.tempo
-                elif msg.type == 'time_signature':
+                elif msg.type == "time_signature":
                     self.time_signature = (msg.numerator, msg.denominator)
 
         self.messages = merge_tracks(self.mf.tracks)
@@ -54,13 +53,13 @@ class MidiFilePlayer(EventDispatcher):
         self.notes_on = set()
 
         # XXX: All this time handling should go in a class
-        (
-            self.beats_per_bar,
-            self.beat_length,
-            self.bar_length
-        ) = self._calculate_lengths()
-        self.seconds_per_tick = self._get_seconds_per_tick(self.mf.ticks_per_beat)
-        self.ticks_per_bar = (self.mf.ticks_per_beat * self.beats_per_bar)
+        (self.beats_per_bar, self.beat_length, self.bar_length) = (
+            self._calculate_lengths()
+        )
+        self.seconds_per_tick = self._get_seconds_per_tick(
+            self.mf.ticks_per_beat
+        )
+        self.ticks_per_bar = self.mf.ticks_per_beat * self.beats_per_bar
 
     def _get_seconds_per_tick(self, ticks_per_beat):
         seconds_per_tick = (self.tempo / 1000000.0) / float(ticks_per_beat)
@@ -84,19 +83,19 @@ class MidiFilePlayer(EventDispatcher):
 
     def _synth_msg(self, msg, *args):
         self.now += msg.time
-        if msg.type == 'note_on':
+        if msg.type == "note_on":
             SYNTH.noteon(msg.channel, msg.note, msg.velocity)
             self.notes_on.add((msg.note, msg.channel))
-        elif msg.type == 'note_off':
+        elif msg.type == "note_off":
             SYNTH.noteoff(msg.channel, msg.note)
             self.notes_on.remove((msg.note, msg.channel))
-        elif msg.type == 'pitchwheel':
+        elif msg.type == "pitchwheel":
             SYNTH.pitch_bend(msg.channel, msg.pitch)
-        elif msg.type == 'control_change':
+        elif msg.type == "control_change":
             SYNTH.cc(msg.channel, msg.control, msg.value)
-        elif msg.type == 'program_change':
+        elif msg.type == "program_change":
             SYNTH.program_change(msg.channel, msg.program)
-        elif msg.type == 'reset':
+        elif msg.type == "reset":
             pass
         else:
             pass
@@ -107,8 +106,9 @@ class MidiFilePlayer(EventDispatcher):
         self.fill_buffer()
 
     def _schedule_buffer(self):
-        Clock.schedule_once(self._synth_buffer,
-                            self.delta * self.seconds_per_tick)
+        Clock.schedule_once(
+            self._synth_buffer, self.delta * self.seconds_per_tick
+        )
 
     def _bar_break(self, *args):
         self.bar_number += 1
@@ -125,12 +125,14 @@ class MidiFilePlayer(EventDispatcher):
             # in a bar. To fix this we should look ahead in the queue
             # and schedule bar until the next message, but I don't feel
             # like it right now.
-            if (self.now >= self.bar_number * self.ticks_per_bar
-                    and not self.bar_pending):
+            if (
+                self.now >= self.bar_number * self.ticks_per_bar
+                and not self.bar_pending
+            ):
                 Clock.schedule_once(
                     self._bar_break,
                     ((self.bar_number + 1) * self.ticks_per_bar - self.now)
-                    * self.seconds_per_tick
+                    * self.seconds_per_tick,
                 )
                 self.bar_pending = True
         elif self.status != PlayStatus.Stopped:
@@ -157,10 +159,13 @@ class MidiFilePlayer(EventDispatcher):
         self.status = PlayStatus.Stopped
         Clock.unschedule(self._bar_break)
         # Fill the queue with messages that stop all notes currently playing.
-        self.msg_queue = deque([Message('note_off', note=n, channel=c,
-                                        velocity=0, time=0)
-                                for n, c in self.notes_on])
-        self.msg_queue.append(Message('reset'))
+        self.msg_queue = deque(
+            [
+                Message("note_off", note=n, channel=c, velocity=0, time=0)
+                for n, c in self.notes_on
+            ]
+        )
+        self.msg_queue.append(Message("reset"))
         Clock.unschedule(self._synth_buffer)
         self.fill_buffer()
 

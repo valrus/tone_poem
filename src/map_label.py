@@ -1,8 +1,9 @@
 from random import choice
-from mingus.containers import Note
-from mingus.containers import NoteContainer
-from mingushelpers import NOTE_NAMES, fancify_note_name
+
+from mingus.containers import Note, NoteContainer
 from mingus.core.intervals import determine
+
+from mingushelpers import NOTE_NAMES, fancify_note_name
 
 
 class NodeLabel(object):
@@ -26,7 +27,9 @@ class NodeNote(NodeLabel):
 
     def __init__(self, note=None):
         self._container = None
-        self.value = [note] if note else [Note(n, 4) for n in NOTE_NAMES if len(n) == 1]
+        self.value = (
+            [note] if note else [Note(n, 4) for n in NOTE_NAMES if len(n) == 1]
+        )
 
     def __sub__(self, other):
         is_up = self.value <= other.value
@@ -34,8 +37,9 @@ class NodeNote(NodeLabel):
             lower, upper = self.value.name, other.value.name
         else:
             lower, upper = other.value.name, self.value.name
-        return EdgeInterval(determine(lower, upper, shorthand=True), is_up=is_up)
-
+        return EdgeInterval(
+            determine(lower, upper, shorthand=True), is_up=is_up
+        )
 
     def container(self):
         return self._container
@@ -57,7 +61,9 @@ class EdgeInterval(EdgeLabel):
         self.value = interval
 
     def __str__(self):
-        return "".join([
-            '\N{UPWARDS ARROW}' if self.is_up else '\N{DOWNWARDS ARROW}',
-            fancify_note_name(self.value)
-        ])
+        return "".join(
+            [
+                "\N{UPWARDS ARROW}" if self.is_up else "\N{DOWNWARDS ARROW}",
+                fancify_note_name(self.value),
+            ]
+        )

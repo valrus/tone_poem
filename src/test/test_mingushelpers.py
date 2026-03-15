@@ -1,10 +1,9 @@
 import os
-import unittest
 import sys
+import unittest
 
 sys.path.append(os.path.pardir)
 
-from mingus.containers import Note
 from mingus.containers import NoteContainer
 
 import mingushelpers
@@ -28,13 +27,14 @@ class test_notes_match(unittest.TestCase):
         self.assertFalse(mingushelpers.notes_match(nc1, nc2))
 
     def test_empty_match(self):
-        self.assertTrue(mingushelpers.notes_match(NoteContainer(),
-                                                  NoteContainer()))
+        self.assertTrue(
+            mingushelpers.notes_match(NoteContainer(), NoteContainer())
+        )
 
     def test_multiple_octave_match(self):
         nc1, nc2 = NoteContainer(["A-3", "B-4"]), NoteContainer(["A-5", "B-5"])
         self.assertTrue(mingushelpers.notes_match(nc1, nc2))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

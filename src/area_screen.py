@@ -3,32 +3,39 @@ import os
 from collections import OrderedDict, defaultdict
 from functools import partial
 from itertools import chain, repeat
-from math import copysign, sqrt, cos, sin, pi
-from random import gauss, choice
+from math import copysign, cos, pi, sin, sqrt
+from random import choice, gauss
 
 from kivy.animation import Animation, AnimationTransition
 from kivy.core.image import Image
 from kivy.event import EventDispatcher
-from kivy.graphics import Color, Line, Mesh, Rectangle, RenderContext
+from kivy.graphics import Color, Line, Mesh, RenderContext
 from kivy.graphics.texture import Texture
-from kivy.properties import ObjectProperty, BooleanProperty, ListProperty
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.relativelayout import RelativeLayout
+from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.screenmanager import Screen
-from kivy.uix.stencilview import StencilView
 from kivy.uix.label import Label
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 
+import map
+import map_label
 from beastie import NoteCollector
 from creature import PlayerCharacter
 from creature_widget import CreatureWidget
 from mingushelpers import notes_match
-from tools import Size, Quad, Rect, Coords, distance_squared, safe_divide, point_to_line
-from tools import vertices_to_edges, edges_to_vec4s
-from tools import ROOT_DIR, WINDOW_SIZE
-import map
-import map_label
+from tools import (
+    ROOT_DIR,
+    WINDOW_SIZE,
+    Coords,
+    Quad,
+    Rect,
+    Size,
+    distance_squared,
+    edges_to_vec4s,
+    safe_divide,
+    vertices_to_edges,
+)
 
 
 class AtlasData(object):
@@ -66,10 +73,12 @@ class AtlasData(object):
 class UVData(object):
     def __init__(self, atlas_size, tex_dims):
         atlas_w, atlas_h = atlas_size
-        self.corners = Quad(tex_dims.x / atlas_w,
-                            1. - tex_dims.y / atlas_h,
-                            (tex_dims.x + tex_dims.w) / atlas_w,
-                            1. - (tex_dims.y + tex_dims.h) / atlas_h)
+        self.corners = Quad(
+            tex_dims.x / atlas_w,
+            1.0 - tex_dims.y / atlas_h,
+            (tex_dims.x + tex_dims.w) / atlas_w,
+            1.0 - (tex_dims.y + tex_dims.h) / atlas_h,
+        )
         self.size = Size(tex_dims.w, tex_dims.h)
 
 
@@ -88,7 +97,7 @@ class MapRenderer(EventDispatcher):
 class SkeletronMapRenderer(MapRenderer):
     def __init__(self, **kw):
         super(SkeletronMapRenderer, self).__init__(**kw)
-        self.ground_texture = Texture.create(size=(512, 512), colorfmt='rgb')
+        self.ground_texture = Texture.create(size=(512, 512), colorfmt="rgb")
         self.custom_shader = None
 
     def draw_paths(self, paths):
@@ -97,8 +106,12 @@ class SkeletronMapRenderer(MapRenderer):
         with self.features.canvas:
             Color(1.0, 1.0, 1.0)
             for p1, p2 in paths:
-                Line(points=list(chain(p1, p2)),
-                     dash_offset=2, dash_length=2, width=1)
+                Line(
+                    points=list(chain(p1, p2)),
+                    dash_offset=2,
+                    dash_length=2,
+                    width=1,
+                )
 
     def draw_walls(self, walls):
         if not self.terrain:
@@ -114,23 +127,25 @@ class ForestMapRenderer(SkeletronMapRenderer):
     sprites = AtlasData(os.path.join(ROOT_DIR, "sprites", "trees.atlas"))
     wall_page = 0
     vertex_format = [
-        (b'vPosition', 2, 'float'),
-        (b'vTexCoords0', 2, 'float'),
-        (b'vRotation', 1, 'float'),
-        (b'vCenter', 2, 'float')
+        (b"vPosition", 2, "float"),
+        (b"vTexCoords0", 2, "float"),
+        (b"vRotation", 1, "float"),
+        (b"vCenter", 2, "float"),
     ]
 
     def _read_atlas(self):
-        return self.__class__.sprites.atlas_uv_dict(
-            self.__class__.wall_page
-        )
+        return self.__class__.sprites.atlas_uv_dict(self.__class__.wall_page)
 
     def __init__(self, **kw):
         super(ForestMapRenderer, self).__init__(**kw)
-        self.ground_texture = Image(os.path.join("sprites", "grass_tile.png")).texture
+        self.ground_texture = Image(
+            os.path.join("sprites", "grass_tile.png")
+        ).texture
         self.ground_texture.wrap = "repeat"
-        self.ground_texture.uvsize = (WINDOW_SIZE.w // 512 + 1,
-                                      WINDOW_SIZE.h // 512 + 1)  # probably change
+        self.ground_texture.uvsize = (
+            WINDOW_SIZE.w // 512 + 1,
+            WINDOW_SIZE.h // 512 + 1,
+        )  # probably change
         self.custom_shader = os.path.join(ROOT_DIR, "multiquad.glsl")
         self.uvs = self._read_atlas()
         self.wall_meshes = []
@@ -140,23 +155,46 @@ class ForestMapRenderer(SkeletronMapRenderer):
 
     def _mesh_box(self, uvs, x, y, scale=1.0):
         return [
-            (-uvs.size.w * scale, -uvs.size.h * scale,
-             uvs.corners.x1, uvs.corners.y1,
-             0, x, y),
-            (uvs.size.w * scale, -uvs.size.h * scale,
-             uvs.corners.x2, uvs.corners.y1,
-             0, x, y),
-            (uvs.size.w * scale, uvs.size.h * scale,
-             uvs.corners.x2, uvs.corners.y2,
-             0, x, y),
-            (-uvs.size.w * scale, uvs.size.h * scale,
-             uvs.corners.x1, uvs.corners.y2,
-             0, x, y)
+            (
+                -uvs.size.w * scale,
+                -uvs.size.h * scale,
+                uvs.corners.x1,
+                uvs.corners.y1,
+                0,
+                x,
+                y,
+            ),
+            (
+                uvs.size.w * scale,
+                -uvs.size.h * scale,
+                uvs.corners.x2,
+                uvs.corners.y1,
+                0,
+                x,
+                y,
+            ),
+            (
+                uvs.size.w * scale,
+                uvs.size.h * scale,
+                uvs.corners.x2,
+                uvs.corners.y2,
+                0,
+                x,
+                y,
+            ),
+            (
+                -uvs.size.w * scale,
+                uvs.size.h * scale,
+                uvs.corners.x1,
+                uvs.corners.y2,
+                0,
+                x,
+                y,
+            ),
         ]
 
     def _triangle_indices(self, start):
-        return [start, start + 1, start + 2,
-                start + 2, start + 3, start]
+        return [start, start + 1, start + 2, start + 2, start + 3, start]
 
     def _get_tree_line(self, wall, verts, indices):
         v1, v2 = wall
@@ -170,7 +208,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
             return
         dy, dx = Dy / density, Dx / density
         x, y = v1
-        x_going_right = (dx > 0)
+        x_going_right = dx > 0
         while y > v2.y and ((x < v2.x) == x_going_right):
             jitter = gauss(0, 0.25)
             indices.extend(self._triangle_indices(len(verts)))
@@ -179,7 +217,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                     self._choose_tex(),
                     x + jitter * dy,
                     y + jitter * dx,
-                    scale=0.3
+                    scale=0.3,
                 )
             )
             x, y = x + dx, y + dy
@@ -192,17 +230,22 @@ class ForestMapRenderer(SkeletronMapRenderer):
             for wall in walls:
                 self._get_tree_line(wall, verts, indices)
             # NB: Max vertices length is 65535. Might need multiple meshes.
-            self.wall_meshes.append(Mesh(
-                indices=indices,
-                vertices=chain(*sorted(verts, key=lambda i: -i[6])),
-                mode="triangles",
-                fmt=self.__class__.vertex_format,
-                texture=self.__class__.sprites.texture(self.__class__.wall_page)
-            ))
+            self.wall_meshes.append(
+                Mesh(
+                    indices=indices,
+                    vertices=chain(*sorted(verts, key=lambda i: -i[6])),
+                    mode="triangles",
+                    fmt=self.__class__.vertex_format,
+                    texture=self.__class__.sprites.texture(
+                        self.__class__.wall_page
+                    ),
+                )
+            )
 
 
 class MapWrapper(AnchorLayout):
     """Thin wrapper widget to make it easier to position a widget by center on the map."""
+
     def __init__(self, center_coords, wrapped_widget, **kw):
         self.center_coords = center_coords
         self.size_hint = None, None
@@ -221,13 +264,17 @@ class MapLabel(Label):
 
 # XXX: Unit test this SO MUCH
 def sort_counterclockwise_key(center, point):
-    return (copysign(-1, point.y - center.y),
-            -safe_divide(point.x - center.x, point.y - center.y))
+    return (
+        copysign(-1, point.y - center.y),
+        -safe_divide(point.x - center.x, point.y - center.y),
+    )
 
 
 def get_triangular_indices(num_vertices):
     vertices = range(num_vertices)
-    return list(chain(*list(chain(*zip(repeat([0]), zip(vertices[1:], vertices[2:]))))))
+    return list(
+        chain(*list(chain(*zip(repeat([0]), zip(vertices[1:], vertices[2:])))))
+    )
 
 
 def get_corner_vert(verts):
@@ -249,27 +296,25 @@ class ShadeTile(Widget):
     edge_darknesses = ListProperty([])
 
     def __init__(self, *, edges, centerCoords, **kw):
-        self.canvas = RenderContext(use_parent_projection=True,
-                                    use_parent_modelview=True)
-        # Keys: edges, values: 1.0 for dark, 0.0 for light
-        self.edges = OrderedDict(
-            (edge, 1.0)
-            for edge in edges
+        self.canvas = RenderContext(
+            use_parent_projection=True, use_parent_modelview=True
         )
+        # Keys: edges, values: 1.0 for dark, 0.0 for light
+        self.edges = OrderedDict((edge, 1.0) for edge in edges)
         # self.edges[next(iter(self.edges.keys()))] = 0.0
-        self.canvas['edges'] = edges_to_vec4s(self.edges.keys())
-        self.canvas['fNumSides'] = float(len(self.edges))
-        self.canvas['centerCoords'] = [float(x) for x in centerCoords]
-        self.canvas['resolution'] = [float(x) for x in WINDOW_SIZE]
+        self.canvas["edges"] = edges_to_vec4s(self.edges.keys())
+        self.canvas["fNumSides"] = float(len(self.edges))
+        self.canvas["centerCoords"] = [float(x) for x in centerCoords]
+        self.canvas["resolution"] = [float(x) for x in WINDOW_SIZE]
         darknesses = list(self.edges.values())
-        self.canvas['darknesses'] = darknesses
+        self.canvas["darknesses"] = darknesses
         self.canvas.shader.source = os.path.join(ROOT_DIR, "fogbox.glsl")
         self.bind(edge_darknesses=self.on_edge_darknesses)
         super(ShadeTile, self).__init__(**kw)
         self.edge_darknesses = darknesses
 
     def on_edge_darknesses(self, instance, value):
-        self.canvas['darknesses'] = list(value)
+        self.canvas["darknesses"] = list(value)
 
 
 class MapOverlay(RelativeLayout):
@@ -291,21 +336,36 @@ class MapOverlay(RelativeLayout):
             sorted_verts = sorted(verts, key=sort_key)
             mesh_verts = []
             for i, (x, y) in enumerate(sorted_verts):
-                mesh_verts.extend([x, y,
-                                   0.5 + 0.5 * cos(2 * pi * i / len(sorted_verts)),
-                                   0.5 + 0.5 * sin(2 * pi * i / len(sorted_verts))])
+                mesh_verts.extend(
+                    [
+                        x,
+                        y,
+                        0.5 + 0.5 * cos(2 * pi * i / len(sorted_verts)),
+                        0.5 + 0.5 * sin(2 * pi * i / len(sorted_verts)),
+                    ]
+                )
             # print(center_vertex, sorted_verts)
             # print(point_to_line(center_vertex, sorted_verts[0], sorted_verts[1]))
             edges = vertices_to_edges(sorted_verts)
             if center_vertex in clear:
-                print('vertex at {} has {} edges'.format(center_vertex, len(edges)), edges)
+                print(
+                    "vertex at {} has {} edges".format(
+                        center_vertex, len(edges)
+                    ),
+                    edges,
+                )
             shade_widget = ShadeTile(
                 edges=edges,
                 centerCoords=center_vertex,
                 mesh_indices=get_triangular_indices(len(mesh_verts) // 4),
                 mesh_verts=mesh_verts,
-                shade_color=(0.0, 0.0, 0.0, 0.0 if center_vertex in clear else 1.0),
-                opacity=1.0
+                shade_color=(
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0 if center_vertex in clear else 1.0,
+                ),
+                opacity=1.0,
             )
             self.add_widget(shade_widget)
             self.widgets[center_vertex] = shade_widget
@@ -353,17 +413,16 @@ class MapFeatures(RelativeLayout):
     def add_vertices(self, vertices_pos):
         for vertex_pos in vertices_pos:
             # Passing in center=vertex_pos doesn't work, hence the wrapper.
-            vertex_widget = VertexWidget(size_hint=(0.01, 0.01), center=vertex_pos)
+            vertex_widget = VertexWidget(
+                size_hint=(0.01, 0.01), center=vertex_pos
+            )
             wrapper = MapWrapper(vertex_pos, vertex_widget)
             self.add_widget(wrapper)
 
     def add_pc(self, pc, start_widget_pos):
         # Can't pass in center here; if size gets set after center it moves the widget
         self.pcWidget = CreatureWidget(
-            pc,
-            size=(50, 50),
-            size_hint=(None, None),
-            use_label=False
+            pc, size=(50, 50), size_hint=(None, None), use_label=False
         )
         self.pcWidget.center = start_widget_pos
         self.add_widget(self.pcWidget)
@@ -377,20 +436,24 @@ def getNavigationWidgets(start, graph_map, edges):
         label_center = p1 + 0.25 * (p2 - p1)
         label_text = str(graph_map.edge_label(p1, p2))
         # Can't pass in center here; if size gets set after center it moves the widget
-        label = MapLabel(text=label_text,
-                         font_name='fonts/DejaVuSans.ttf',
-                         size=(50, 50),
-                         size_hint=(None, None))
+        label = MapLabel(
+            text=label_text,
+            font_name="fonts/DejaVuSans.ttf",
+            size=(50, 50),
+            size_hint=(None, None),
+        )
         label.center = label_center
         widgets.append(label)
     big_label_text = str(graph_map.node_label(start))
-    big_label = MapLabel(text=big_label_text,
-                         font_name='fonts/DejaVuSans.ttf',
-                         size=(150, 150),
-                         font_size=48,
-                         bold=True,
-                         size_hint=(None, None),
-                         color=(1, 1, 1, 0.5))
+    big_label = MapLabel(
+        text=big_label_text,
+        font_name="fonts/DejaVuSans.ttf",
+        size=(150, 150),
+        font_size=48,
+        bold=True,
+        size_hint=(None, None),
+        color=(1, 1, 1, 0.5),
+    )
     big_label.center = start
     widgets.append(big_label)
     return widgets
@@ -409,7 +472,7 @@ class AreaScreen(Screen):
         self.map.add_labels(map_label.NodeNote)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
         self.vertices_pos = self.map.nodes()
-        self.pc = PlayerCharacter('Valrus', 'sprites/walrus')
+        self.pc = PlayerCharacter("Valrus", "sprites/walrus")
         self.pc_loc = choice(list(self.vertices_pos))
         self.nav_widgets = []
         super(AreaScreen, self).__init__(**kw)
@@ -423,7 +486,7 @@ class AreaScreen(Screen):
 
     def on_midi_in(self, instance, value):
         value.watchers.add(self)
-        self.register_event_type('on_midi')
+        self.register_event_type("on_midi")
 
     def on_terrain(self, instance, value):
         self.renderer.terrain = value
@@ -447,7 +510,9 @@ class AreaScreen(Screen):
         for w in self.nav_widgets:
             self.features.remove_widget(w)
         del self.nav_widgets[:]
-        self.nav_widgets = getNavigationWidgets(self.pc_loc, self.map, self.map.edges([self.pc_loc]))
+        self.nav_widgets = getNavigationWidgets(
+            self.pc_loc, self.map, self.map.edges([self.pc_loc])
+        )
         for w in self.nav_widgets:
             # print("adding widget", w.text, "with center", w.center)
             self.features.add_widget(w)
@@ -475,7 +540,7 @@ class AreaScreen(Screen):
                 anim = Animation(
                     center=(self.pc_loc.x, self.pc_loc.y),
                     duration=0.5,
-                    transition=AnimationTransition.in_out_quad
+                    transition=AnimationTransition.in_out_quad,
                 )
                 anim.on_complete = self.resetNavigationWidgets
                 if self.overlay:
@@ -484,15 +549,13 @@ class AreaScreen(Screen):
                 anim.start(self.features.pcWidget)
 
     def draw_edges(self):
-        """Draw lines between this map's vertices.
-        """
-        self.renderer.draw_paths([
-            [v1, v2]
-            for v1, v2 in self.map.edges(self.vertices_pos)
-        ])
+        """Draw lines between this map's vertices."""
+        self.renderer.draw_paths(
+            [[v1, v2] for v1, v2 in self.map.edges(self.vertices_pos)]
+        )
 
     def draw_walls(self):
         actual_walls = [w for w in self.map.walls if w]
-        self.renderer.draw_walls([[Coords(*v1), Coords(*v2)]
-                                  for v1, v2 in actual_walls])
-
+        self.renderer.draw_walls(
+            [[Coords(*v1), Coords(*v2)] for v1, v2 in actual_walls]
+        )

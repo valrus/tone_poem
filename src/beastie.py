@@ -3,15 +3,20 @@ from random import choice
 
 from kivy.animation import Animation
 from kivy.properties import BooleanProperty
-
-from mingus.containers import Note
-from mingus.containers import NoteContainer
+from mingus.containers import Note, NoteContainer
 
 from creature import Creature
-from mingushelpers import MidiPercussion, thread_NoteContainer
-from mingushelpers import is_note_on, is_note_off, notes_match
-from mingushelpers import ALL_INTERVALS, MIDI_INSTRS, BEASTIE_CHANNEL
-from mingushelpers import NOTE_NAMES
+from mingushelpers import (
+    ALL_INTERVALS,
+    BEASTIE_CHANNEL,
+    MIDI_INSTRS,
+    NOTE_NAMES,
+    MidiPercussion,
+    is_note_off,
+    is_note_on,
+    notes_match,
+    thread_NoteContainer,
+)
 
 
 class BeastieAnimation(object):
@@ -27,24 +32,31 @@ class BeastieAnimation(object):
             raise ValueError("No attributes provided to animate!")
         elif self.sounds and len(self.kws) != len(self.sounds):
             raise ValueError("Need one set of callback args per animation.")
-        stepDuration = (
-            (beat_length * self.duration) / (self.repeat * len(self.kws))
+        stepDuration = (beat_length * self.duration) / (
+            self.repeat * len(self.kws)
         )
-        steps = [Animation(duration=stepDuration, **kw)
-                 for kw in self.kws * self.repeat]
+        steps = [
+            Animation(duration=stepDuration, **kw)
+            for kw in self.kws * self.repeat
+        ]
         for i, s in enumerate(steps):
             sound_this_step = self.sounds[i % len(self.kws)]
             if sound_this_step:
-                s.bind(on_start=partial(thread_NoteContainer,
-                                        self.sounds[i % len(self.kws)],
-                                        stepDuration,
-                                        None))
+                s.bind(
+                    on_start=partial(
+                        thread_NoteContainer,
+                        self.sounds[i % len(self.kws)],
+                        stepDuration,
+                        None,
+                    )
+                )
         return sum(steps[1:], steps[0])
 
 
 # TODO: Unit testable
 class NoteCollector(object):
     """Gather notes into a NoteContainer as MIDI msgs come in."""
+
     def __init__(self):
         self.pending_notes = {}
         self.received_notes = NoteContainer()
@@ -109,7 +121,7 @@ class Beastie(Creature):
 
     def __init__(self, party, name):
         super(Beastie, self).__init__(name, self.__class__.sprite)
-        self.register_event_type('on_midi')
+        self.register_event_type("on_midi")
         self.party = party
 
     def on_attack(self, index, *args):
@@ -129,42 +141,39 @@ class Beastie(Creature):
 
 
 class LandEel(Beastie):
-    sprite = 'sprites/landeel'
+    sprite = "sprites/landeel"
     base_happiness = 2
 
     def __init__(self, party, name):
         super(LandEel, self).__init__(party, name)
         self.anim = BeastieAnimation(
-            beat=2, duration=1,
-            kws=({'color': [1, 0, 0, 1]}, {'color': [1, 1, 1, 1]}),
-            sounds=(
-                MidiPercussion.HighWoodBlock,
-                MidiPercussion.LowWoodBlock
-            )
+            beat=2,
+            duration=1,
+            kws=({"color": [1, 0, 0, 1]}, {"color": [1, 1, 1, 1]}),
+            sounds=(MidiPercussion.HighWoodBlock, MidiPercussion.LowWoodBlock),
         )
         self.attack = IntervalAttack(
             start_notes=[Note(n, 4) for n in NOTE_NAMES],
             note_placement=[(4, 0.5), (4.5, 0.5)],
-            instr=MIDI_INSTRS['Drawbar Organ'],
+            instr=MIDI_INSTRS["Drawbar Organ"],
         )
 
 
 class PinkElephant(Beastie):
-    sprite = 'sprites/pinkelephant'
+    sprite = "sprites/pinkelephant"
     base_happiness = 3
 
     def __init__(self, party, name):
         super(PinkElephant, self).__init__(party, name)
         self.anim = BeastieAnimation(
-            beat=1, duration=2, repeat=1,
-            kws=({'color': [1, 0, 0, 1]}, {'color': [1, 1, 1, 1]}),
-            sounds=(
-                MidiPercussion.LowTom1,
-                None
-            )
+            beat=1,
+            duration=2,
+            repeat=1,
+            kws=({"color": [1, 0, 0, 1]}, {"color": [1, 1, 1, 1]}),
+            sounds=(MidiPercussion.LowTom1, None),
         )
         self.attack = IntervalAttack(
             start_notes=[Note(n, 1) for n in NOTE_NAMES],
             note_placement=[(3, 0.5), (4, 0.5)],
-            instr=MIDI_INSTRS['Tuba']
+            instr=MIDI_INSTRS["Tuba"],
         )

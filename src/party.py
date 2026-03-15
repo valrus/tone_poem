@@ -11,15 +11,15 @@ class Party(EventDispatcher):
 class PlayerParty(Party):
     def __init__(self):
         self.members = [
-            PlayerCharacter('Valrus', 'sprites/walrus'),
-            PlayerCharacter('Sally', 'sprites/turtle')
+            PlayerCharacter("Valrus", "sprites/walrus"),
+            PlayerCharacter("Sally", "sprites/turtle"),
         ]
 
 
 class BeastieParty(Party):
     def __init__(self):
         self.members = [
-            LandEel(self, 'Timothy'),
-            PinkElephant(self, 'Albert'),
-            LandEel(self, 'Nathan')
+            LandEel(self, "Timothy"),
+            PinkElephant(self, "Albert"),
+            LandEel(self, "Nathan"),
         ]

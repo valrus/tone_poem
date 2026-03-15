@@ -1,16 +1,16 @@
 from collections import namedtuple
-from math import floor
 from itertools import chain, combinations
+from math import floor
 
 import networkx as nx
 
 from poisson.poisson_disk import sample_poisson_uniform
-from tools import Coords, Size, WINDOW_SIZE, distance_squared, intersect
-from voronoi import computeDelaunayTriangulation, SiteList, Context, voronoi
+from tools import WINDOW_SIZE, Coords, Size, distance_squared, intersect
+from voronoi import Context, SiteList, computeDelaunayTriangulation, voronoi
 
 LONG_DISTANCE = 300
 
-WallCrossing = namedtuple('WallCrossing', ['wall', 'path'])
+WallCrossing = namedtuple("WallCrossing", ["wall", "path"])
 
 
 def constrain(given_point, m, bounds, rightward=True):
@@ -51,28 +51,36 @@ def _secondneighbors(graph, start):
 
 
 class GraphMap(object):
-    """A map with nodes connected by edges.
-    """
-    def __init__(self, margin=60, dims=WINDOW_SIZE):
-        self.dims = Size(*dims)
+    """A map with nodes connected by edges."""
+
+    def __init__(self, margin: int = 60, dims: Size = WINDOW_SIZE):
+        self.dims = dims
         self.min_distance = sum(dims) / 18
         self.margin = margin
         points = [
-            Coords(floor(x) + self.margin, floor(y) + self.margin) for x, y in
-            sample_poisson_uniform(self.dims.w - self.margin * 2,
-                                   self.dims.h - self.margin * 2,
-                                   self.min_distance,
-                                   # Sample points for Poisson, arbitrary
-                                   30)
+            Coords(floor(x) + self.margin, floor(y) + self.margin)
+            for x, y in sample_poisson_uniform(
+                self.dims.w - self.margin * 2,
+                self.dims.h - self.margin * 2,
+                self.min_distance,
+                # Sample points for Poisson, arbitrary
+                30,
+            )
         ]
         self.graph = nx.Graph()
         self.graph.add_nodes_from(points)
         for triangle in computeDelaunayTriangulation(points):
-            self.graph.add_edges_from(chain.from_iterable([
-                [(points[firstIndex], points[secondIndex]),
-                 (points[secondIndex], points[firstIndex])]
-                for firstIndex, secondIndex in combinations(triangle, 2)
-            ]))
+            self.graph.add_edges_from(
+                chain.from_iterable(
+                    [
+                        [
+                            (points[firstIndex], points[secondIndex]),
+                            (points[secondIndex], points[firstIndex]),
+                        ]
+                        for firstIndex, secondIndex in combinations(triangle, 2)
+                    ]
+                )
+            )
         wall_crossings, self.wall_dict = self.computeWalls()
         self.walls = [cross.wall for cross in wall_crossings]
         self.removeMultiWallEdges()
@@ -84,7 +92,7 @@ class GraphMap(object):
         self.adjacency = self.graph.copy()
 
         # remove too-long edges unless doing so would disconnect the graph
-        dist_squared = self.min_distance ** 2
+        dist_squared = self.min_distance**2
         # can't use edges here since we're modifying it
         for v1, v2, attrs in list(self.graph.edges(data=True)):
             if distance_squared(v1, v2) > 2 * dist_squared:
@@ -114,7 +122,7 @@ class GraphMap(object):
             # this doesn't seem to get all of them though
             # at this point multi-wall edges still exist
             if self.graph.has_edge(node1, node2):
-                self.graph[node1][node2]['wall'] = wall
+                self.graph[node1][node2]["wall"] = wall
                 print(node1, node2, wall)
                 count += 1
         print(count)
@@ -133,10 +141,14 @@ class GraphMap(object):
 
         for i, v1, v2 in context.edges:
             path = context.bisectors[i]
-            if all(v != -1 and not self.pointOutsideBounds(*verts[v])
-                   for v in (v1, v2)):
+            if all(
+                v != -1 and not self.pointOutsideBounds(*verts[v])
+                for v in (v1, v2)
+            ):
                 # edge has a vertex at either end, easy
-                walls[i] = WallCrossing((Coords(*verts[v1]), Coords(*verts[v2])), path)
+                walls[i] = WallCrossing(
+                    (Coords(*verts[v1]), Coords(*verts[v2])), path
+                )
                 continue
             if self.pointOutsideBounds(*verts[v1]):
                 v1 = -1
@@ -149,14 +161,21 @@ class GraphMap(object):
             if self.pointOutsideBounds(*p0):
                 continue
             # need to handle case where b is 0
-            p1 = Coords(*constrain(p0, (-a / b) if b else (-a * float('inf')),
-                        self.dims, rightward=(v1 != -1)))
+            p1 = Coords(
+                *constrain(
+                    p0,
+                    (-a / b) if b else (-a * float("inf")),
+                    self.dims,
+                    rightward=(v1 != -1),
+                )
+            )
             walls[i] = WallCrossing((p0, p1), path)
 
         wall_dict = dict()
         for site, edge_list in context.polygons.items():
-            wall_dict[nodes[site]] = [walls[i].wall for i, _, _ in edge_list
-                                      if walls[i] is not None]
+            wall_dict[nodes[site]] = [
+                walls[i].wall for i, _, _ in edge_list if walls[i] is not None
+            ]
 
         return [wall for wall in walls if wall is not None], wall_dict
 
@@ -172,22 +191,22 @@ class GraphMap(object):
         pass
 
     def add_labels(self, nodeType):
-        nx.set_node_attributes(self.graph, {
-            n: nodeType() for n in self.graph.nodes()
-        }, 'label')
+        nx.set_node_attributes(
+            self.graph, {n: nodeType() for n in self.graph.nodes()}, "label"
+        )
         self._cleanup_nodes(nodeType)
 
     def edge_label(self, n1, n2):
         return self.node_label(n1) - self.node_label(n2)
 
     def node_label(self, n):
-        return self.graph.nodes[n]['label']
+        return self.graph.nodes[n]["label"]
 
     def walls_for_node(self, n):
         return self.wall_dict[n]
 
     def wall_between_nodes(self, n1, n2):
-        return self.adjacency[n1][n2]['wall']
+        return self.adjacency[n1][n2]["wall"]
 
     def __getattr__(self, attrname):
         return getattr(self.graph, attrname)
@@ -204,10 +223,16 @@ class ForestMap(GraphMap):
             seen = set()
             for neighbor in nx.all_neighbors(self.graph, center):
                 node = self.graph.nodes[neighbor]
-                if node['label'].name in seen:
-                    illegal = set(n['label'].name for n in _secondneighbors(self.graph, neighbor))
+                if node["label"].name in seen:
+                    illegal = set(
+                        n["label"].name
+                        for n in _secondneighbors(self.graph, neighbor)
+                    )
                     # Not a fan of reaching in and using to_shorthand here, but...
-                    node['label'].value = [c for c in nodeType.POSSIBLE_VALUES
-                                           if not c.to_shorthand() in illegal]
+                    node["label"].value = [
+                        c
+                        for c in nodeType.POSSIBLE_VALUES
+                        if c.to_shorthand() not in illegal
+                    ]
                 else:
-                    seen.add(node['label'].name)
+                    seen.add(node["label"].name)

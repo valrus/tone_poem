@@ -1,12 +1,10 @@
+import mingus.core.value as value
 from kivy.clock import Clock
 from kivy.event import EventDispatcher
+from mingus.containers import Bar, Track
 
-import mingus.core.value as value
-from mingus.containers import Bar
-from mingus.containers import Track
-
-from mingushelpers import MidiPercussion
 from mido_player import MidiFilePlayer, PlayStatus
+from mingushelpers import MidiPercussion
 
 
 class MusicPlayer(EventDispatcher):
@@ -17,7 +15,7 @@ class MusicPlayer(EventDispatcher):
         self.file_player = MidiFilePlayer(midiFile)
         self.beat_length = self.file_player.beat_length
 
-        self.register_event_type('on_bar')
+        self.register_event_type("on_bar")
         # Can add a flag for repeating
         self.file_player.bind(status=self.schedule_music)
         self.file_player.bind(bar_number=self.on_bar)
@@ -25,7 +23,7 @@ class MusicPlayer(EventDispatcher):
 
     def _set_up_metronome(self):
         metronome = Track()
-        bar = Bar('C', (4, 4))
+        bar = Bar("C", (4, 4))
         metronome.add_bar(bar)
         kick = MidiPercussion.BassDrum1
         kick.velocity = 120
@@ -35,9 +33,9 @@ class MusicPlayer(EventDispatcher):
 
     def on_bar(self, inst, bar_number):
         if bar_number:
-            print('bar {}'.format(bar_number))
+            print("bar {}".format(bar_number))
             for watcher in self.watchers:
-                watcher.dispatch('on_bar', bar_number)
+                watcher.dispatch("on_bar", bar_number)
 
     def start(self):
         self.schedule_music(None, PlayStatus.Start)
