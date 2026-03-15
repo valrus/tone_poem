@@ -1,5 +1,3 @@
-from __future__ import division
-
 from collections import deque
 from fractions import Fraction
 

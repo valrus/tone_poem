@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty
 

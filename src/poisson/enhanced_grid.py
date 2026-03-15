@@ -29,7 +29,6 @@
 #
 #@todo Implement a way to use copy containers instead of window containers
 
-from __future__ import division
 from random import randint
 from math import ceil
 

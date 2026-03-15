@@ -1,5 +1,3 @@
-from __future__ import division
-
 from collections import namedtuple
 from math import floor
 from itertools import chain, combinations
