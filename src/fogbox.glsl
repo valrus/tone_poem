@@ -43,7 +43,7 @@ uniform vec4       edges[12];
 uniform float      darknesses[12];
 uniform float      fNumSides;
 uniform vec2       centerCoords;
-uniform vec2       resolution;
+// uniform vec2       resolution;
 
 float pointToLine(vec2 p0, vec4 seg) {
     /* https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points */
@@ -60,7 +60,9 @@ void main(void) {
     // calculate the distance from the point to the closest edge
     float minDistance = 1.0 / 0.0;
     float minDistanceWeighted = 1.0 / 0.0;
-    // omitting an edge from this list will make it light all the way to the edge
+
+    // omitting an edge from this list will make it light
+    // all the way to the edge
     for (int i = 0; i < numSides; i++) {
         float dist = pointToLine(cPos, edges[i]);
         float weightedDist = dist / darknesses[i];
