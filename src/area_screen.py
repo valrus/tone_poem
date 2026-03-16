@@ -366,13 +366,14 @@ class ShadeTile(Widget):
 
 class MapOverlay(RelativeLayout):
     wall_dict: dict[Coords, tuple[Coords, Coords]]
+    widgets: dict[Coords, Widget]
+    clear: set[Coords]
 
     def __init__(self, wall_dict, **kw):
         self.wall_dict = wall_dict
         super(MapOverlay, self).__init__(**kw)
         self.widgets = dict()
         self.clear = set()
-        self.clear_edges = set()
 
     def setup_fog(self, clear=None) -> None:
         self.clear = clear or set()
@@ -524,12 +525,15 @@ class AreaScreen(Screen):
     midi_in = ObjectProperty(None)
 
     margin: int = 60
+    map: map.GraphMap
+    pc: PlayerCharacter
+    pc_loc: Coords
 
     def __init__(self, **kw):
         self.map = map.ForestMap(margin=AreaScreen.margin)
         self.map.add_labels(map_label.NodeNote)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
-        self.vertices_pos = self.map.nodes()
+        self.vertices_pos = self.map.graph.nodes()
         self.pc = PlayerCharacter("Valrus", "sprites/walrus")
         self.pc_loc = choice(list(self.vertices_pos))
         self.nav_widgets = []
@@ -611,7 +615,7 @@ class AreaScreen(Screen):
     def draw_edges(self):
         """Draw lines between this map's vertices."""
         self.renderer.draw_paths(
-            [[v1, v2] for v1, v2 in self.map.edges(self.vertices_pos)]
+            [[v1, v2] for v1, v2 in self.map.graph.edges(self.vertices_pos)]
         )
 
     def draw_walls(self):

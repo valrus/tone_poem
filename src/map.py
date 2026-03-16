@@ -228,7 +228,10 @@ class GraphMap:
         return self.adjacency[n1][n2]["wall"]
 
     def __getattr__(self, attrname):
-        return getattr(self.graph, attrname)
+        """Pass through all other attributes to self.graph.
+
+        This is probably a bad idea."""
+        raise NotImplementedError
 
 
 class ForestMap(GraphMap):
