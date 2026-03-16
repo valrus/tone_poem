@@ -61,7 +61,7 @@ def _secondneighbors(graph, start) -> Generator[Coords, None, None]:
 class GraphMap:
     """A map with nodes connected by edges."""
 
-    wall_dict: dict[Coords, voronoi.Bisector]
+    wall_dict: dict[Coords, tuple[Coords, Coords]]
     dims: Size
     min_distance: float
     margin: int
@@ -145,7 +145,7 @@ class GraphMap:
 
     def computeWalls(
         self,
-    ) -> tuple[list[WallCrossing], dict[Coords, voronoi.Bisector]]:
+    ) -> tuple[list[WallCrossing], dict[Coords, tuple[Coords, Coords]]]:
         nodes = list(self.graph.nodes())
 
         # Poached from voronoi.computeVoronoiDiagram
@@ -228,7 +228,10 @@ class GraphMap:
         return self.adjacency[n1][n2]["wall"]
 
     def __getattr__(self, attrname):
-        return getattr(self.graph, attrname)
+        """Pass through all other attributes to self.graph.
+
+        This is probably a bad idea."""
+        raise NotImplementedError
 
 
 class ForestMap(GraphMap):

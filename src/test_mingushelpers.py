@@ -1,8 +1,4 @@
-import os
-import sys
 import unittest
-
-sys.path.append(os.path.pardir)
 
 from mingus.containers import NoteContainer
 

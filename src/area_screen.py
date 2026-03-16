@@ -11,12 +11,14 @@ from kivy.core.image import Image
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Line, Mesh, RenderContext
 from kivy.graphics.texture import Texture
+from kivy.metrics import Metrics
 from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.label import Label
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
+from pydantic.dataclasses import dataclass
 
 import map
 import map_label
@@ -31,6 +33,7 @@ from tools import (
     Coords,
     Quad,
     Rect,
+    Scalable,
     Size,
     WallCrossing,
     distance_squared,
@@ -126,6 +129,29 @@ class SkeletronMapRenderer(MapRenderer):
                 Line(points=list(chain(w1, w2)), width=2)
 
 
+@dataclass(frozen=True)
+class ForestMeshVertex(Scalable):
+    x: float
+    y: float
+    texture_x: float
+    texture_y: float
+    rotation: float
+    center_x: float
+    center_y: float
+
+    @property
+    def display_tuple(self):
+        return (
+            self.x * Metrics.dp,
+            self.y * Metrics.dp,
+            self.texture_x,
+            self.texture_y,
+            self.rotation,
+            self.center_x * Metrics.dp,
+            self.center_y * Metrics.dp,
+        )
+
+
 class ForestMapRenderer(SkeletronMapRenderer):
     sprites = AtlasData(os.path.join(ROOT_DIR, "sprites", "trees.atlas"))
     wall_page = 0
@@ -156,9 +182,16 @@ class ForestMapRenderer(SkeletronMapRenderer):
     def _choose_tex(self):
         return choice(list(self.uvs.values()))
 
-    def _mesh_box(self, uvs, x, y, scale=1.0):
-        return [
-            (
+    def _mesh_box(
+        self, uvs, x, y, scale=1.0
+    ) -> tuple[
+        ForestMeshVertex,
+        ForestMeshVertex,
+        ForestMeshVertex,
+        ForestMeshVertex,
+    ]:
+        return (
+            ForestMeshVertex(
                 -uvs.size.w * scale,
                 -uvs.size.h * scale,
                 uvs.corners.x1,
@@ -167,7 +200,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 x,
                 y,
             ),
-            (
+            ForestMeshVertex(
                 uvs.size.w * scale,
                 -uvs.size.h * scale,
                 uvs.corners.x2,
@@ -176,7 +209,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 x,
                 y,
             ),
-            (
+            ForestMeshVertex(
                 uvs.size.w * scale,
                 uvs.size.h * scale,
                 uvs.corners.x2,
@@ -185,7 +218,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 x,
                 y,
             ),
-            (
+            ForestMeshVertex(
                 -uvs.size.w * scale,
                 uvs.size.h * scale,
                 uvs.corners.x1,
@@ -194,7 +227,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 x,
                 y,
             ),
-        ]
+        )
 
     def _triangle_indices(self, start):
         return [start, start + 1, start + 2, start + 2, start + 3, start]
@@ -215,7 +248,6 @@ class ForestMapRenderer(SkeletronMapRenderer):
         while y > v2.y and ((x < v2.x) == x_going_right):
             jitter = gauss(0, 0.25)
             indices.extend(self._triangle_indices(len(verts)))
-            # TODO: display scaling here?
             verts.extend(
                 self._mesh_box(
                     self._choose_tex(),
@@ -232,12 +264,19 @@ class ForestMapRenderer(SkeletronMapRenderer):
         verts, indices = [], []
         with self.terrain.canvas:
             for wall in walls:
+                # note: modifies verts in place
                 self._get_tree_line(wall, verts, indices)
             # NB: Max vertices length is 65535. Might need multiple meshes.
+            # TODO: display scaling here?
             self.wall_meshes.append(
                 Mesh(
                     indices=indices,
-                    vertices=chain(*sorted(verts, key=lambda i: -i[6])),
+                    vertices=chain(
+                        *[
+                            vert.display_tuple
+                            for vert in sorted(verts, key=lambda i: -i.center_y)
+                        ]
+                    ),
                     mode="triangles",
                     fmt=self.__class__.vertex_format,
                     texture=self.__class__.sprites.texture(
@@ -299,7 +338,7 @@ class ShadeTile(Widget):
     shade_color = ListProperty([])
     edge_darknesses = ListProperty([])
 
-    edges: dict
+    edges: dict[tuple[tuple[float, float], tuple[float, float]], float]
 
     def __init__(self, *, edges, centerCoords, **kw):
         self.canvas = RenderContext(
@@ -326,16 +365,17 @@ class ShadeTile(Widget):
 
 
 class MapOverlay(RelativeLayout):
-    wall_dict: tuple[list[WallCrossing], dict[Coords, voronoi.Bisector]]
+    wall_dict: dict[Coords, tuple[Coords, Coords]]
+    widgets: dict[Coords, Widget]
+    clear: set[Coords]
 
     def __init__(self, wall_dict, **kw):
         self.wall_dict = wall_dict
         super(MapOverlay, self).__init__(**kw)
         self.widgets = dict()
         self.clear = set()
-        self.clear_edges = set()
 
-    def setup_fog(self, clear=None):
+    def setup_fog(self, clear=None) -> None:
         self.clear = clear or set()
         for center_vertex, walls in self.wall_dict.items():
             sort_key = partial(sort_counterclockwise_key, center_vertex)
@@ -429,16 +469,24 @@ class MapFeatures(RelativeLayout):
             wrapper = MapWrapper(vertex_pos, vertex_widget)
             self.add_widget(wrapper)
 
-    def add_pc(self, pc, start_widget_pos):
+    def add_pc(self, pc: PlayerCharacter, start_widget_pos: Coords):
         # Can't pass in center here; if size gets set after center it moves the widget
         self.pcWidget = CreatureWidget(
-            pc, size=(50, 50), size_hint=(None, None), use_label=False
+            pc,
+            size=(50, 50),
+            size_hint=(None, None),
+            use_label=False,
         )
         self.pcWidget.center = start_widget_pos
         self.add_widget(self.pcWidget)
 
 
-def getNavigationWidgets(start, graph_map, edges):
+def get_navigation_widgets(
+    *,
+    start: Coords,
+    graph_map: map.GraphMap,
+    edges: list[tuple[Coords, Coords]],
+):
     widgets = []
     for p1, p2 in edges:
         if p2 == start:
@@ -477,12 +525,15 @@ class AreaScreen(Screen):
     midi_in = ObjectProperty(None)
 
     margin: int = 60
+    map: map.GraphMap
+    pc: PlayerCharacter
+    pc_loc: Coords
 
     def __init__(self, **kw):
         self.map = map.ForestMap(margin=AreaScreen.margin)
         self.map.add_labels(map_label.NodeNote)
         self.renderer = kw.get("renderer", ForestMapRenderer)()
-        self.vertices_pos = self.map.nodes()
+        self.vertices_pos = self.map.graph.nodes()
         self.pc = PlayerCharacter("Valrus", "sprites/walrus")
         self.pc_loc = choice(list(self.vertices_pos))
         self.nav_widgets = []
@@ -508,12 +559,12 @@ class AreaScreen(Screen):
         value.add_vertices(self.vertices_pos)
         value.add_pc(self.pc, self.pc_loc)
         self.draw_edges()
-        self.resetNavigationWidgets()
+        self.reset_navigation_widgets()
 
     def on_overlay(self, instance, value):
         value.setup_fog(clear={self.pc_loc})
 
-    def resetNavigationWidgets(self, *args):
+    def reset_navigation_widgets(self, *args):
         """Set up labels describing how to move the PC.
 
         Takes *args because it's used as a callback for Animation.on_complete
@@ -521,8 +572,10 @@ class AreaScreen(Screen):
         for w in self.nav_widgets:
             self.features.remove_widget(w)
         del self.nav_widgets[:]
-        self.nav_widgets = getNavigationWidgets(
-            self.pc_loc, self.map, self.map.edges([self.pc_loc])
+        self.nav_widgets = get_navigation_widgets(
+            start=self.pc_loc,
+            graph_map=self.map,
+            edges=list(self.map.graph.edges([self.pc_loc])),
         )
         for w in self.nav_widgets:
             # print("adding widget", w.text, "with center", w.center)
@@ -553,7 +606,7 @@ class AreaScreen(Screen):
                     duration=0.5,
                     transition=AnimationTransition.in_out_quad,
                 )
-                anim.on_complete = self.resetNavigationWidgets
+                anim.on_complete = self.reset_navigation_widgets
                 if self.overlay:
                     anim.on_start = partial(self.reveal_map_areas, self.pc_loc)
                 print(self.map.wall_between_nodes(prev_loc, self.pc_loc))
@@ -562,7 +615,7 @@ class AreaScreen(Screen):
     def draw_edges(self):
         """Draw lines between this map's vertices."""
         self.renderer.draw_paths(
-            [[v1, v2] for v1, v2 in self.map.edges(self.vertices_pos)]
+            [[v1, v2] for v1, v2 in self.map.graph.edges(self.vertices_pos)]
         )
 
     def draw_walls(self):
