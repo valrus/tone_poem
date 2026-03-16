@@ -176,11 +176,11 @@ def intersect(s1, s2):
     )
 
 
-def sorted_pair(p1, p2):
+def sorted_pair(p1: Coords, p2: Coords) -> tuple[Coords, Coords]:
     return (p1, p2) if p1 < p2 else (p2, p1)
 
 
-def vertices_to_edges(verts):
+def vertices_to_edges(verts: list[Coords]) -> list[tuple[Coords, Coords]]:
     """Convert a list of vertices of a polygon to a list of edges of same.
 
     The output is in the form of a list of 4-float lists,

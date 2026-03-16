@@ -338,7 +338,7 @@ class ShadeTile(Widget):
     shade_color = ListProperty([])
     edge_darknesses = ListProperty([])
 
-    edges: dict
+    edges: dict[tuple[tuple[float, float], tuple[float, float]], float]
 
     def __init__(self, *, edges, centerCoords, **kw):
         self.canvas = RenderContext(
@@ -365,7 +365,7 @@ class ShadeTile(Widget):
 
 
 class MapOverlay(RelativeLayout):
-    wall_dict: tuple[list[WallCrossing], dict[Coords, voronoi.Bisector]]
+    wall_dict: dict[Coords, tuple[Coords, Coords]]
 
     def __init__(self, wall_dict, **kw):
         self.wall_dict = wall_dict
@@ -374,7 +374,7 @@ class MapOverlay(RelativeLayout):
         self.clear = set()
         self.clear_edges = set()
 
-    def setup_fog(self, clear=None):
+    def setup_fog(self, clear=None) -> None:
         self.clear = clear or set()
         for center_vertex, walls in self.wall_dict.items():
             sort_key = partial(sort_counterclockwise_key, center_vertex)
@@ -468,16 +468,24 @@ class MapFeatures(RelativeLayout):
             wrapper = MapWrapper(vertex_pos, vertex_widget)
             self.add_widget(wrapper)
 
-    def add_pc(self, pc, start_widget_pos):
+    def add_pc(self, pc: PlayerCharacter, start_widget_pos: Coords):
         # Can't pass in center here; if size gets set after center it moves the widget
         self.pcWidget = CreatureWidget(
-            pc, size=(50, 50), size_hint=(None, None), use_label=False
+            pc,
+            size=(50, 50),
+            size_hint=(None, None),
+            use_label=False,
         )
         self.pcWidget.center = start_widget_pos
         self.add_widget(self.pcWidget)
 
 
-def getNavigationWidgets(start, graph_map, edges):
+def get_navigation_widgets(
+    *,
+    start: Coords,
+    graph_map: map.GraphMap,
+    edges: list[tuple[Coords, Coords]],
+):
     widgets = []
     for p1, p2 in edges:
         if p2 == start:
@@ -547,12 +555,12 @@ class AreaScreen(Screen):
         value.add_vertices(self.vertices_pos)
         value.add_pc(self.pc, self.pc_loc)
         self.draw_edges()
-        self.resetNavigationWidgets()
+        self.reset_navigation_widgets()
 
     def on_overlay(self, instance, value):
         value.setup_fog(clear={self.pc_loc})
 
-    def resetNavigationWidgets(self, *args):
+    def reset_navigation_widgets(self, *args):
         """Set up labels describing how to move the PC.
 
         Takes *args because it's used as a callback for Animation.on_complete
@@ -560,8 +568,10 @@ class AreaScreen(Screen):
         for w in self.nav_widgets:
             self.features.remove_widget(w)
         del self.nav_widgets[:]
-        self.nav_widgets = getNavigationWidgets(
-            self.pc_loc, self.map, self.map.edges([self.pc_loc])
+        self.nav_widgets = get_navigation_widgets(
+            start=self.pc_loc,
+            graph_map=self.map,
+            edges=list(self.map.graph.edges([self.pc_loc])),
         )
         for w in self.nav_widgets:
             # print("adding widget", w.text, "with center", w.center)
@@ -592,7 +602,7 @@ class AreaScreen(Screen):
                     duration=0.5,
                     transition=AnimationTransition.in_out_quad,
                 )
-                anim.on_complete = self.resetNavigationWidgets
+                anim.on_complete = self.reset_navigation_widgets
                 if self.overlay:
                     anim.on_start = partial(self.reveal_map_areas, self.pc_loc)
                 print(self.map.wall_between_nodes(prev_loc, self.pc_loc))
