@@ -2,7 +2,6 @@ import json
 import os
 import random
 import sys
-from collections import OrderedDict
 
 import kivy
 
@@ -140,15 +139,10 @@ class TonePoemApp(App):
 
         party = PlayerParty()
         sm = TonePoemGame(
-            screen_dict=OrderedDict(
-                [
-                    ("area", AreaScreen(name="area")),
-                    (
-                        "encounter",
-                        EncounterScreen(name="encounter", party=party),
-                    ),
-                ]
-            ),
+            screen_dict={
+                "area": AreaScreen(name="area"),
+                "encounter": EncounterScreen(name="encounter", party=party),
+            },
             app=self,
         )
         return sm
