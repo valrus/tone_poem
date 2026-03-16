@@ -5,7 +5,7 @@ import sys
 
 import kivy
 
-from tools import CONFIG_INI, ROOT_DIR, WINDOW_SIZE
+from .tools import CONFIG_INI, ROOT_DIR, WINDOW_SIZE
 
 kivy.require("1.5.0")
 
@@ -17,15 +17,16 @@ Config.set("kivy", "log_level", "debug")
 
 from kivy.app import App
 from kivy.core.window import Window
+from kivy.logger import Logger
 from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.settings import Settings
 from mingus.midi import fluidsynth
 
-from area_screen import AreaScreen
-from encounter_screen import EncounterScreen
-from keyboard import MidiInputDispatcher
-from party import PlayerParty
+from .area_screen import AreaScreen
+from .encounter_screen import EncounterScreen
+from .keyboard import MidiInputDispatcher
+from .party import PlayerParty
 
 SETTINGS_JSON = os.path.join(ROOT_DIR, "settings.json")
 DEBUG = True
@@ -149,13 +150,14 @@ class TonePoemApp(App):
 
 
 def main():
+    Logger.info(f"{os.getcwd()=}")
     TonePoemApp().run()
 
 
 if __name__ == "__main__":
     if DEBUG is True:
         seed = random.randint(0, sys.maxsize)
-        print("Random seed is {}".format(seed))
+        Logger.info("Random seed is {}".format(seed))
         random.seed(seed)
     elif DEBUG:
         random.seed(DEBUG)

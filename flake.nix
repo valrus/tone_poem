@@ -116,7 +116,7 @@
       editablePackage = pkgs.python3.pkgs.mkPythonEditablePackage {
         pname = projectMetadata.name;
         inherit (projectMetadata) version scripts;
-        root = "$PWD";
+        root = "$PWD/src";
       };
 
       # We are using the default nixpkgs Python3 interpreter & package set.
@@ -149,6 +149,7 @@
           arg = project.renderers.withPackages
             {
               inherit python;
+              extraPackages = (ps: [ editablePackage ]);
               extras = [ "dev" "test" ];
             };
 

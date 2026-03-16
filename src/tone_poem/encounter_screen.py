@@ -8,10 +8,10 @@ from kivy.properties import NumericProperty, ObjectProperty
 from kivy.uix.screenmanager import Screen
 from mingus.core.notes import note_to_int
 
-from creature_widget import CreatureWidget
-from musicplayer import MusicPlayer
-from party import BeastieParty
-from tools import ROOT_DIR, y_iterator
+from .creature_widget import CreatureWidget
+from .musicplayer import MusicPlayer
+from .party import BeastieParty
+from .tools import ROOT_DIR, y_iterator
 
 
 class EncounterScreen(Screen):

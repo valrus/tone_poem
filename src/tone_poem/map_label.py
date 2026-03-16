@@ -3,7 +3,7 @@ from random import choice
 from mingus.containers import Note, NoteContainer
 from mingus.core.intervals import determine
 
-from mingushelpers import NOTE_NAMES, fancify_note_name
+from .mingushelpers import NOTE_NAMES, fancify_note_name
 
 
 class NodeLabel(object):

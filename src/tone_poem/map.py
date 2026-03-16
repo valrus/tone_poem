@@ -5,9 +5,9 @@ from typing import Generator
 
 import networkx as nx
 
-import voronoi
-from poisson.poisson_disk import sample_poisson_uniform
-from tools import (
+from . import voronoi
+from .poisson.poisson_disk import sample_poisson_uniform
+from .tools import (
     WINDOW_SIZE,
     Coords,
     Size,

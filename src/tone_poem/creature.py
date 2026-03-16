@@ -1,6 +1,8 @@
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty
 
+from .tools import ROOT_DIR
+
 
 class Creature(EventDispatcher):
     current_happiness = NumericProperty(None)
@@ -18,7 +20,7 @@ class Creature(EventDispatcher):
         self.current_happiness = 0
         self.max_happiness = self.__class__.base_happiness
         self.state = "normal"
-        self.atlas = "atlas://{}/{}".format(atlas_path, self.state)
+        self.atlas = f"atlas://{ROOT_DIR}/{atlas_path}/{self.state}"
 
 
 class PlayerCharacter(Creature):

@@ -1,7 +1,8 @@
 import unittest
 
 from map import constrain
-from tools import Coords, Size
+
+from .tools import Coords, Size
 
 
 class test_constrain(unittest.TestCase):

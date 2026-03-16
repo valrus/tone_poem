@@ -3,8 +3,8 @@ from kivy.clock import Clock
 from kivy.event import EventDispatcher
 from mingus.containers import Bar, Track
 
-from mido_player import MidiFilePlayer, PlayStatus
-from mingushelpers import MidiPercussion
+from .mido_player import MidiFilePlayer, PlayStatus
+from .mingushelpers import MidiPercussion
 
 
 class MusicPlayer(EventDispatcher):

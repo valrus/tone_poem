@@ -1,7 +1,7 @@
 from kivy.event import EventDispatcher
 
-from beastie import *
-from creature import PlayerCharacter
+from .beastie import LandEel, PinkElephant
+from .creature import PlayerCharacter
 
 
 class Party(EventDispatcher):

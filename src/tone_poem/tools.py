@@ -6,7 +6,7 @@ from math import sqrt
 from kivy.metrics import Metrics
 from pydantic.dataclasses import dataclass
 
-import voronoi
+from . import voronoi
 
 
 @dataclass(frozen=True)

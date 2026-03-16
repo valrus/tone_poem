@@ -20,14 +20,12 @@ from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 from pydantic.dataclasses import dataclass
 
-import map
-import map_label
-import voronoi
-from beastie import NoteCollector
-from creature import PlayerCharacter
-from creature_widget import CreatureWidget
-from mingushelpers import notes_match
-from tools import (
+from . import map, map_label
+from .beastie import NoteCollector
+from .creature import PlayerCharacter
+from .creature_widget import CreatureWidget
+from .mingushelpers import notes_match
+from .tools import (
     ROOT_DIR,
     WINDOW_SIZE,
     Coords,
@@ -35,7 +33,6 @@ from tools import (
     Rect,
     Scalable,
     Size,
-    WallCrossing,
     distance_squared,
     edges_to_vec4s,
     safe_divide,
@@ -168,7 +165,7 @@ class ForestMapRenderer(SkeletronMapRenderer):
     def __init__(self, **kw):
         super(ForestMapRenderer, self).__init__(**kw)
         self.ground_texture = Image(
-            os.path.join("sprites", "grass_tile.png")
+            os.path.join(ROOT_DIR, "sprites", "grass_tile.png")
         ).texture
         self.ground_texture.wrap = "repeat"
         self.ground_texture.uvsize = (
@@ -332,7 +329,7 @@ def get_corner_vert(verts):
 
 
 class ShadeTile(Widget):
-    texture = Image(os.path.join("sprites", "light.png")).texture
+    texture = Image(os.path.join(ROOT_DIR, "sprites", "light.png")).texture
     mesh_verts = ListProperty([])
     mesh_indices = ListProperty([])
     shade_color = ListProperty([])

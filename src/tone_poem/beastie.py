@@ -5,8 +5,8 @@ from kivy.animation import Animation
 from kivy.properties import BooleanProperty
 from mingus.containers import Note, NoteContainer
 
-from creature import Creature
-from mingushelpers import (
+from .creature import Creature
+from .mingushelpers import (
     ALL_INTERVALS,
     BEASTIE_CHANNEL,
     MIDI_INSTRS,

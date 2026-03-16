@@ -13,7 +13,7 @@ from kivy.uix.widget import Widget
 from mingus.containers import Note
 from mingus.midi import fluidsynth
 
-from mingushelpers import (
+from .mingushelpers import (
     PLAYER_CHANNEL,
     InstrumentNames,
     is_note_off,

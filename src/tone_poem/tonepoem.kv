@@ -1,6 +1,7 @@
 #:kivy 1.5.0
-#:import WINDOW_SIZE tools.WINDOW_SIZE
-#:import MidiInputDispatcher keyboard.MidiInputDispatcher
+#:import Metrics kivy.metrics.Metrics
+#:set WINDOW_SIZE_X 1600
+#:set WINDOW_SIZE_Y 900
 
 <VertexWidget>:
     canvas:
@@ -39,7 +40,7 @@
 <ShadeTile>:
     color: (0, 0, 0, 1)
     size_hint: None, None
-    size: WINDOW_SIZE.display_tuple
+    size: WINDOW_SIZE_X * Metrics.dp, WINDOW_SIZE_Y * Metrics.dp
     canvas:
         Color:
             rgba: self.shade_color
@@ -51,7 +52,7 @@
 
 <MapOverlay>:
     size_hint: None, None
-    size: WINDOW_SIZE.display_tuple
+    size: WINDOW_SIZE_X * Metrics.dp, WINDOW_SIZE_Y * Metrics.dp
     pos: 0, 0
     opacity: 1.0
 
