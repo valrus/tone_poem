@@ -1,4 +1,5 @@
 import os
+from collections.abc import Iterable
 from dataclasses import astuple
 from itertools import chain
 from math import sqrt
@@ -191,12 +192,17 @@ def vertices_to_edges(verts: list[Coords]) -> list[tuple[Coords, Coords]]:
     ]
 
 
-def edge_to_vec4(verts):
-    """Convert 2 vertices to a 4-float list."""
-    return [float(x) for x in chain.from_iterable(verts)]
+def edge_to_vec4(
+    verts: tuple[tuple[float, float], tuple[float, float]],
+) -> list[float]:
+    """Convert 2 vertices to a 4-float tuple."""
+    v1, v2 = verts
+    return [*v1, *v2]
 
 
-def edges_to_vec4s(edges):
+def edges_to_vec4s(
+    edges: Iterable[tuple[tuple[float, float], tuple[float, float]]],
+) -> list[list[float]]:
     return [edge_to_vec4(edge) for edge in edges]
 
 

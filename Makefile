@@ -11,5 +11,8 @@ build: version
 	direnv reload
 
 .PHONY: run
-run:
+run: build
 	tone-poem
+
+test: build
+	pytest
