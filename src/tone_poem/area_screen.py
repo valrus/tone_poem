@@ -3,7 +3,7 @@ import os
 from collections import defaultdict
 from functools import partial
 from itertools import chain, repeat
-from math import copysign, cos, pi, sin, sqrt
+from math import copysign, sqrt
 from random import choice, gauss
 
 from kivy.animation import Animation, AnimationTransition
@@ -11,6 +11,7 @@ from kivy.core.image import Image
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Line, Mesh, RenderContext
 from kivy.graphics.texture import Texture
+from kivy.logger import Logger
 from kivy.metrics import Metrics
 from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.anchorlayout import AnchorLayout
@@ -264,15 +265,14 @@ class ForestMapRenderer(SkeletronMapRenderer):
                 # note: modifies verts in place
                 self._get_tree_line(wall, verts, indices)
             # NB: Max vertices length is 65535. Might need multiple meshes.
-            # TODO: display scaling here?
             self.wall_meshes.append(
                 Mesh(
                     indices=indices,
-                    vertices=chain(
-                        *[
+                    vertices=list(
+                        chain.from_iterable(
                             vert.display_tuple
                             for vert in sorted(verts, key=lambda i: -i.center_y)
-                        ]
+                        )
                     ),
                     mode="triangles",
                     fmt=self.__class__.vertex_format,
@@ -329,32 +329,42 @@ def get_corner_vert(verts):
 
 
 class ShadeTile(Widget):
-    texture = Image(os.path.join(ROOT_DIR, "sprites", "light.png")).texture
-    mesh_verts = ListProperty([])
     mesh_indices = ListProperty([])
+    mesh_verts = ListProperty([])
     shade_color = ListProperty([])
     edge_darknesses = ListProperty([])
 
     edges: dict[tuple[tuple[float, float], tuple[float, float]], float]
 
-    def __init__(self, *, edges, centerCoords, **kw):
+    def __init__(
+        self,
+        *,
+        edges: list[tuple[tuple[float, float], tuple[float, float]]],
+        center_coords: tuple[float, float],
+        is_clear: bool,
+        **kw,
+    ):
         self.canvas = RenderContext(
             use_parent_projection=True, use_parent_modelview=True
         )
         # Keys: edges, values: 1.0 for dark, 0.0 for light
         self.edges = {edge: 1.0 for edge in edges}
-        # self.edges[next(iter(self.edges.keys()))] = 0.0
-        self.canvas["edges"] = edges_to_vec4s(self.edges.keys())
-        self.canvas["fNumSides"] = float(len(self.edges))
-        self.canvas["centerCoords"] = [float(x) for x in centerCoords]
-        self.canvas["resolution"] = [
-            float(x) for x in WINDOW_SIZE.display_tuple
-        ]
         darknesses = list(self.edges.values())
-        self.canvas["darknesses"] = darknesses
+        # self.edges[next(iter(self.edges.keys()))] = 0.0
+        canvas_attrs = {
+            "edges": edges_to_vec4s(self.edges.keys()),
+            "fNumSides": float(len(self.edges)),
+            "centerCoords": list(center_coords),
+            "darknesses": darknesses,
+            # "resolution" : [float(x) for x in WINDOW_SIZE.display_tuple]
+        }
+        for k, v in canvas_attrs.items():
+            self.canvas[k] = v
         self.canvas.shader.source = os.path.join(ROOT_DIR, "fogbox.glsl")
         self.bind(edge_darknesses=self.on_edge_darknesses)
         super(ShadeTile, self).__init__(**kw)
+        if is_clear:
+            Logger.info(f"{canvas_attrs=}")
         self.edge_darknesses = darknesses
 
     def on_edge_darknesses(self, instance, value):
@@ -375,37 +385,37 @@ class MapOverlay(RelativeLayout):
     def setup_fog(self, clear=None) -> None:
         self.clear = clear or set()
         for center_vertex, walls in self.wall_dict.items():
-            sort_key = partial(sort_counterclockwise_key, center_vertex)
-            verts = set(chain(*walls))
-            corner_vert = get_corner_vert(verts)
-            if corner_vert:
+            verts: set[Coords] = set(chain.from_iterable(walls))
+            if corner_vert := get_corner_vert(verts):
                 verts.add(Coords(*corner_vert))
-            sorted_verts = sorted(verts, key=sort_key)
+
+            sorted_verts: list[Coords] = sorted(
+                verts, key=partial(sort_counterclockwise_key, center_vertex)
+            )
+
             mesh_verts = []
-            for i, (x, y) in enumerate(sorted_verts):
+            for i, vert_coord in enumerate(sorted_verts):
+                x, y = vert_coord.display_tuple
                 mesh_verts.extend(
                     [
                         x,
                         y,
-                        0.5 + 0.5 * cos(2 * pi * i / len(sorted_verts)),
-                        0.5 + 0.5 * sin(2 * pi * i / len(sorted_verts)),
+                        # we use a shader, not a texture, so don't need uv
+                        0,  # 0.5 + 0.5 * cos(2 * pi * i / len(sorted_verts)),
+                        0,  # 0.5 + 0.5 * sin(2 * pi * i / len(sorted_verts)),
                     ]
                 )
-            # print(center_vertex, sorted_verts)
-            # print(point_to_line(center_vertex, sorted_verts[0], sorted_verts[1]))
-            edges = vertices_to_edges(sorted_verts)
-            if center_vertex in clear:
-                print(
-                    "vertex at {} has {} edges".format(
-                        center_vertex, len(edges)
-                    ),
-                    edges,
-                )
+
+            edges: list[tuple[Coords, Coords]] = vertices_to_edges(sorted_verts)
+            # Logger.info(f"{center_vertex=}, {sorted_verts=}")
             shade_widget = ShadeTile(
-                edges=edges,
-                centerCoords=center_vertex,
+                edges=[
+                    (v1.display_tuple, v2.display_tuple) for v1, v2 in edges
+                ],
+                center_coords=center_vertex.display_tuple,
                 mesh_indices=get_triangular_indices(len(mesh_verts) // 4),
                 mesh_verts=mesh_verts,
+                is_clear=(center_vertex in clear),
                 shade_color=(
                     0.0,
                     0.0,
@@ -474,7 +484,7 @@ class MapFeatures(RelativeLayout):
             size_hint=(None, None),
             use_label=False,
         )
-        self.pcWidget.center = start_widget_pos
+        self.pcWidget.center = start_widget_pos.display_tuple
         self.add_widget(self.pcWidget)
 
 
@@ -485,10 +495,11 @@ def get_navigation_widgets(
     edges: list[tuple[Coords, Coords]],
 ):
     widgets = []
+    Logger.info(f"get_navigation_widgets {edges=}")
     for p1, p2 in edges:
         if p2 == start:
             p1, p2 = p2, p1
-        label_center = p1 + 0.25 * (p2 - p1)
+        label_center = (p1 + 0.25 * (p2 - p1)).display_tuple
         label_text = str(graph_map.edge_label(p1, p2))
         # Can't pass in center here; if size gets set after center it moves the widget
         label = MapLabel(
@@ -509,7 +520,7 @@ def get_navigation_widgets(
         size_hint=(None, None),
         color=(1, 1, 1, 0.5),
     )
-    big_label.center = start
+    big_label.center = start.display_tuple
     widgets.append(big_label)
     return widgets
 
