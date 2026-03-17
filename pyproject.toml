@@ -1,6 +1,6 @@
 [project]
 name = "tone-poem"
-version = "0.0.1-03161428"
+version = "0.0.1-202603171403"
 dynamic = ["version"]
 description = 'A music theory JRPG.'
 readme = "README.md"

@@ -149,6 +149,7 @@
           arg = project.renderers.withPackages
             {
               inherit python;
+              # Install the editable package to make its scripts available
               extraPackages = (ps: [ editablePackage ]);
               extras = [ "dev" "test" ];
             };
